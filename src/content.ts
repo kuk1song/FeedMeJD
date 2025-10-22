@@ -6,9 +6,9 @@ console.log("FeedMeJD Content Script Loaded!");
  * Manages all UI and interactions for the pet on the page.
  */
 class PetUIManager {
-  private petContainer: HTMLDivElement;
-  private petImage: HTMLImageElement;
-  private feedButton: HTMLButtonElement;
+  private petContainer!: HTMLDivElement;
+  private petImage!: HTMLImageElement;
+  private feedButton!: HTMLButtonElement;
   private jdElement: HTMLElement | null;
 
   constructor() {
