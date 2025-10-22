@@ -50,14 +50,65 @@ function checkForJD() {
 
     if (petImage && feedButton) {
       // Note: We'll use .png for now. When you have GIFs, you can change this.
-      petImage.src = chrome.runtime.getURL('images/pet-hungry.png'); // Hungry state
+      petImage.src = chrome.runtime.getURL('images/pet-hungry.png');
       petImage.title = 'I am hungry for this JD!';
-      feedButton.style.display = 'block'; // Show the feed button
+      feedButton.style.display = 'block';
+
+      // --- NEW: Add click listener to the feed button ---
+      feedButton.addEventListener('click', () => handleFeed(jdElement, petImage, feedButton));
     }
   } else {
     console.log("FeedMeJD: No Job Description found on this page.");
   }
 }
+
+/**
+ * Handles the entire "feeding" process when the button is clicked.
+ * @param {HTMLElement} jdElement - The element containing the job description text.
+ * @param {HTMLImageElement} petImage - The pet's image element.
+ * @param {HTMLButtonElement} feedButton - The feed button element.
+ */
+function handleFeed(jdElement, petImage, feedButton) {
+  console.log("FeedMeJD: Feed button clicked!");
+
+  // --- 1. Visual Feedback: Start Eating/Digesting ---
+  feedButton.style.display = 'none'; // Hide button during processing
+  petImage.src = chrome.runtime.getURL('images/pet-eating.png');
+  petImage.title = 'Om nom nom... digesting this JD!';
+
+  // --- 2. Extract JD Text ---
+  const jdText = jdElement.innerText;
+  
+  // --- 3. Send to Background for AI Processing ---
+  chrome.runtime.sendMessage({ type: "ANALYZE_JD", text: jdText }, (response) => {
+    if (response && response.success) {
+      console.log("FeedMeJD: Background script finished analysis.", response.data);
+      
+      // --- 4. Visual Feedback: Done & Feel Good ---
+      // Done State (show gem)
+      petImage.src = chrome.runtime.getURL('images/pet-done.png');
+      petImage.title = 'I\'ve produced a Skill Gem for you!';
+      // TODO: Actually create and show the gem element
+
+      // Feel Good State (after a short delay)
+      setTimeout(() => {
+        petImage.src = chrome.runtime.getURL('images/pet-feel-good.png');
+        petImage.title = 'That was yummy!';
+      }, 1500); // Show "done" state for 1.5s
+
+      // Return to Idle State (after another delay)
+      setTimeout(() => {
+        petImage.src = chrome.runtime.getURL('images/pet-idle.png');
+        petImage.title = 'Hello! I am your JobPet!';
+      }, 3500); // Show "feel good" for 2s (1.5s + 2s = 3.5s total)
+
+    } else {
+      console.error("FeedMeJD: Analysis failed or an error occurred.");
+      // TODO: Handle error case, maybe return to idle
+    }
+  });
+}
+
 
 // --- Script Entry Point ---
 main();
