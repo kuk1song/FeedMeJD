@@ -5,8 +5,7 @@
   "description": "Your AI pet career assistant. Feed it job descriptions to analyze skill trends.",
   "permissions": [
     "storage",
-    "scripting",
-    "ai"
+    "scripting"
   ],
   "host_permissions": [
     "https://*.linkedin.com/*"

@@ -9,8 +9,8 @@ export default defineConfig({
       input: {
         background: resolve(__dirname, 'src/background.ts'),
         content: resolve(__dirname, 'src/content.ts'),
-        dashboard: resolve(__dirname, 'src/dashboard.html'),
-        popup: resolve(__dirname, 'src/popup.html'),
+        dashboard: resolve(__dirname, 'dashboard.html'),
+        popup: resolve(__dirname, 'popup.html'),
       },
       output: {
         entryFileNames: '[name].js',
