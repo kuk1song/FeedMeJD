@@ -31,29 +31,59 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
   }
 });
+function getLanguageModelFactory() {
+  if (typeof LanguageModel !== "undefined") {
+    console.log("FeedMeJD: Using global LanguageModel API (Service Worker)");
+    return LanguageModel;
+  }
+  if (typeof self.LanguageModel !== "undefined") {
+    console.log("FeedMeJD: Using self.LanguageModel API");
+    return self.LanguageModel;
+  }
+  if (typeof self.ai !== "undefined" && self.ai?.languageModel) {
+    console.log("FeedMeJD: Using self.ai.languageModel API");
+    return self.ai.languageModel;
+  }
+  if (typeof self !== "undefined" && typeof self.window !== "undefined") {
+    const win = self.window;
+    if (typeof win.ai !== "undefined" && win.ai?.languageModel) {
+      console.log("FeedMeJD: Using window.ai.languageModel API");
+      return win.ai.languageModel;
+    }
+  }
+  return null;
+}
 async function handleAIAnalysis(text) {
-  if (typeof chrome.ai === "undefined") {
-    console.error("FeedMeJD: chrome.ai API is not available in this browser environment.");
+  const languageModelAPI = getLanguageModelFactory();
+  if (!languageModelAPI) {
+    console.error("FeedMeJD: Built-in AI (LanguageModel) is not available in this browser environment.");
+    console.error("Checked: self.ai, window.ai, LanguageModel, self.LanguageModel - all undefined");
     throw new Error("AI_UNAVAILABLE");
   }
-  const availability = await chrome.ai.getAvailability();
-  switch (availability) {
-    case "available":
-      console.log("FeedMeJD: AI model is available.");
-      break;
-    case "downloading":
-      console.log("FeedMeJD: AI model is downloading.");
-      throw new Error("AI_DOWNLOADING");
-    case "downloadable":
-      console.log("FeedMeJD: AI model is downloadable.");
-      throw new Error("AI_DOWNLOAD_REQUIRED");
-    case "unavailable":
-    default:
-      console.error("FeedMeJD: AI model is unavailable on this device.");
-      throw new Error("AI_UNAVAILABLE");
+  console.log("FeedMeJD: Checking AI model availability...");
+  const availability = await languageModelAPI.availability();
+  console.log(`FeedMeJD: AI availability status: ${availability}`);
+  const availabilityLower = String(availability).toLowerCase();
+  if (availabilityLower === "readily" || availabilityLower === "available") {
+    console.log("FeedMeJD: AI model is readily available.");
+  } else if (availabilityLower === "after-download" || availabilityLower === "downloadable" || availabilityLower === "downloading") {
+    console.log(`FeedMeJD: AI model status: ${availability}. Attempting to trigger download...`);
+    console.log("FeedMeJD: Proceeding to create session (this will trigger download if needed)...");
+  } else if (availabilityLower === "no" || availabilityLower === "unavailable") {
+    console.error("FeedMeJD: AI model is not supported on this device.");
+    throw new Error("AI_UNAVAILABLE");
+  } else {
+    console.warn(`FeedMeJD: Unknown availability status: ${availability}. Attempting to proceed...`);
   }
-  console.log("FeedMeJD: Initializing AI text session...");
-  const session = await chrome.ai.createTextSession();
+  console.log("FeedMeJD: Creating AI language model session...");
+  const session = await languageModelAPI.create({
+    // Specify expected output language to ensure optimal quality and safety
+    monitor(m) {
+      m.addEventListener("downloadprogress", (e) => {
+        console.log(`FeedMeJD: Model download progress: ${(e.loaded * 100).toFixed(0)}%`);
+      });
+    }
+  });
   console.log("FeedMeJD: Prompting AI model...");
   const prompt = `
     Analyze the following job description text.

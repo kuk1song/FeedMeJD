@@ -1,15 +1,43 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-declare namespace chrome.ai {
-  export function createTextSession(
-    options?: any
-  ): Promise<TextSession>;
-  
-  export function getAvailability(): Promise<string>;
+// Type definitions for Chrome's Built-in AI APIs (Gemini Nano)
+// Supporting multiple API versions for maximum compatibility
 
-  export interface TextSession {
-    prompt(prompt: string): Promise<string>;
-    destroy(): Promise<void>;
+declare global {
+  interface AILanguageModelCreateOptions {
+    signal?: AbortSignal;
+    monitor?: (monitor: AICreateMonitor) => void;
+    systemPrompt?: string;
+    initialPrompts?: Array<{ role: string; content: string }>;
+    topK?: number;
+    temperature?: number;
   }
+
+  interface AICreateMonitor extends EventTarget {
+    addEventListener(
+      type: 'downloadprogress',
+      listener: (event: { loaded: number; total: number }) => void
+    ): void;
+  }
+
+  interface AILanguageModel {
+    prompt(input: string, options?: any): Promise<string>;
+    promptStreaming(input: string, options?: any): ReadableStream;
+    destroy(): Promise<void>;
+    clone(options?: { signal?: AbortSignal }): Promise<AILanguageModel>;
+  }
+
+  interface AILanguageModelFactory {
+    create(options?: AILanguageModelCreateOptions): Promise<AILanguageModel>;
+    availability(): Promise<'readily' | 'after-download' | 'no'>;
+    capabilities(): Promise<any>;
+  }
+
+  // Modern API structure (Chrome 138+)
+  const ai: {
+    languageModel: AILanguageModelFactory;
+  } | undefined;
+
+  // Alternative global object naming
+  const LanguageModel: AILanguageModelFactory | undefined;
 }
 
 declare namespace chrome.runtime {
@@ -17,3 +45,5 @@ declare namespace chrome.runtime {
       message?: string;
   } | undefined;
 }
+
+export {};

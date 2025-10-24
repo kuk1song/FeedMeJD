@@ -3,6 +3,9 @@
   "name": "FeedMeJD",
   "version": "0.1.0",
   "description": "Your AI pet career assistant. Feed it job descriptions to analyze skill trends.",
+  "trial_tokens": [
+    "YOUR_ORIGIN_TRIAL_TOKEN_HERE"
+  ],
   "permissions": [
     "storage",
     "scripting",

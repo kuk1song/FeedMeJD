@@ -65,39 +65,87 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
  * @param {string} text The job description text.
  * @returns {Promise<AnalysisResult>} The analysis result.
  */
+/**
+ * Detects and returns the correct LanguageModel API factory from the environment.
+ * Supports multiple API naming conventions for maximum compatibility.
+ * IMPORTANT: In Service Worker context, use global LanguageModel or self.LanguageModel.
+ */
+function getLanguageModelFactory(): AILanguageModelFactory | null {
+  // Service Worker environment: Try global LanguageModel first
+  if (typeof LanguageModel !== 'undefined') {
+    console.log("FeedMeJD: Using global LanguageModel API (Service Worker)");
+    return LanguageModel;
+  }
+  
+  // Try self.LanguageModel (Service Worker alternative)
+  if (typeof (self as any).LanguageModel !== 'undefined') {
+    console.log("FeedMeJD: Using self.LanguageModel API");
+    return (self as any).LanguageModel;
+  }
+  
+  // Try modern API (for non-Service Worker contexts)
+  if (typeof self.ai !== 'undefined' && self.ai?.languageModel) {
+    console.log("FeedMeJD: Using self.ai.languageModel API");
+    return self.ai.languageModel;
+  }
+  
+  // Try window.ai.languageModel (if window is available)
+  if (typeof self !== 'undefined' && typeof (self as any).window !== 'undefined') {
+    const win = (self as any).window;
+    if (typeof win.ai !== 'undefined' && win.ai?.languageModel) {
+      console.log("FeedMeJD: Using window.ai.languageModel API");
+      return win.ai.languageModel;
+    }
+  }
+  
+  return null;
+}
+
 async function handleAIAnalysis(text: string): Promise<AnalysisResult> {
-  // Defensive check: Ensure the chrome.ai API exists before using it.
-  if (typeof chrome.ai === 'undefined') {
-    console.error("FeedMeJD: chrome.ai API is not available in this browser environment.");
+  // Step 1: Detect the correct API
+  const languageModelAPI = getLanguageModelFactory();
+  
+  if (!languageModelAPI) {
+    console.error("FeedMeJD: Built-in AI (LanguageModel) is not available in this browser environment.");
+    console.error("Checked: self.ai, window.ai, LanguageModel, self.LanguageModel - all undefined");
     throw new Error("AI_UNAVAILABLE");
   }
 
-  // Step 1: Proactively check the availability of the AI model.
-  // This is the core of our "Graceful Degradation" strategy.
-  const availability = await (chrome.ai as any).getAvailability();
+  // Step 2: Check the availability of the AI model
+  console.log("FeedMeJD: Checking AI model availability...");
+  const availability = await languageModelAPI.availability();
   
-  switch (availability) {
-    case 'available':
-      // All good, continue to the analysis.
-      console.log("FeedMeJD: AI model is available.");
-      break;
-    case 'downloading':
-      // The model is downloading, inform the user.
-      console.log("FeedMeJD: AI model is downloading.");
-      throw new Error("AI_DOWNLOADING");
-    case 'downloadable':
-      // The model needs to be downloaded, which might require user interaction.
-      console.log("FeedMeJD: AI model is downloadable.");
-      throw new Error("AI_DOWNLOAD_REQUIRED");
-    case 'unavailable':
-    default:
-      // The device does not meet the requirements.
-      console.error("FeedMeJD: AI model is unavailable on this device.");
-      throw new Error("AI_UNAVAILABLE");
+  console.log(`FeedMeJD: AI availability status: ${availability}`);
+  
+  // Handle both old and new API return values for maximum compatibility
+  const availabilityLower = String(availability).toLowerCase();
+  
+  if (availabilityLower === 'readily' || availabilityLower === 'available') {
+    // Model is ready, continue to the analysis.
+    console.log("FeedMeJD: AI model is readily available.");
+  } else if (availabilityLower === 'after-download' || availabilityLower === 'downloadable' || availabilityLower === 'downloading') {
+    // Model needs to be downloaded or is currently downloading.
+    console.log(`FeedMeJD: AI model status: ${availability}. Attempting to trigger download...`);
+    // Don't throw error - try to create session anyway, which will trigger download
+    console.log("FeedMeJD: Proceeding to create session (this will trigger download if needed)...");
+  } else if (availabilityLower === 'no' || availabilityLower === 'unavailable') {
+    // The device does not meet the requirements.
+    console.error("FeedMeJD: AI model is not supported on this device.");
+    throw new Error("AI_UNAVAILABLE");
+  } else {
+    // Unknown status
+    console.warn(`FeedMeJD: Unknown availability status: ${availability}. Attempting to proceed...`);
   }
 
-  console.log("FeedMeJD: Initializing AI text session...");
-  const session = await chrome.ai.createTextSession();
+  console.log("FeedMeJD: Creating AI language model session...");
+  const session = await languageModelAPI.create({
+    // Specify expected output language to ensure optimal quality and safety
+    monitor(m) {
+      m.addEventListener("downloadprogress", (e) => {
+        console.log(`FeedMeJD: Model download progress: ${(e.loaded * 100).toFixed(0)}%`);
+      });
+    }
+  });
 
   console.log("FeedMeJD: Prompting AI model...");
 
