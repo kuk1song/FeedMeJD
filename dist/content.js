@@ -134,14 +134,8 @@ if (typeof window.feedMeJdInjected === "undefined") {
       console.log("FeedMeJD: Starting success animation!");
       console.log("FeedMeJD: Switching to 'done' state...");
       this.setState("done");
-      setTimeout(() => {
-        console.log("FeedMeJD: Switching to 'feel-good' state...");
-        this.setState("feel-good");
-      }, 1500);
-      setTimeout(() => {
-        console.log("FeedMeJD: Animation complete, returning to normal state...");
-        this.updateStateBasedOnJD();
-      }, 3500);
+      this.petImage.title = "Analysis complete! I've saved this JD as a skill gem.";
+      this.feedButton.style.display = "none";
     }
     cleanup() {
       console.log("FeedMeJD: Cleaning up and unloading Pet UI...");

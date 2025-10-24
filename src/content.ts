@@ -169,22 +169,15 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     private runSuccessAnimation(): void {
       console.log("FeedMeJD: Starting success animation!");
       
-      // 1. Show "Done" state and the gem
+      // 1. Show "Done" state and the gem - this state will persist
       console.log("FeedMeJD: Switching to 'done' state...");
       this.setState('done');
-      // TODO: Create and show the gem element visually
+      this.petImage.title = "Analysis complete! I've saved this JD as a skill gem.";
       
-      // 2. After a delay, switch to "Feel Good"
-      setTimeout(() => {
-        console.log("FeedMeJD: Switching to 'feel-good' state...");
-        this.setState('feel-good');
-      }, 1500);
-
-      // 3. After another delay, return to the appropriate state
-      setTimeout(() => {
-        console.log("FeedMeJD: Animation complete, returning to normal state...");
-        this.updateStateBasedOnJD();
-      }, 3500);
+      // Keep the feed button hidden to indicate this JD has been analyzed
+      this.feedButton.style.display = 'none';
+      
+      // TODO: Create and show the gem element visually with an animation
     }
 
     public cleanup(): void {
