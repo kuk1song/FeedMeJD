@@ -33,24 +33,53 @@ chrome.runtime.onMessage.addListener(
  * @returns {Promise<AnalysisResult>} The analysis result.
  */
 async function handleAIAnalysis(text: string): Promise<AnalysisResult> {
-  // TODO: Replace with actual AI calls
-  console.log("FeedMeJD: [Placeholder] Starting simulated AI analysis...");
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  console.log("FeedMeJD: Initializing AI text session...");
+  
+  // Use the built-in AI
+  const session = await chrome.ai.createTextSession();
 
-  const result: AnalysisResult = {
-    summary: "This is a placeholder summary.",
-    skills: {
-      hard: ["TypeScript", "Vite", "Chrome Extensions"],
-      soft: ["Problem Solving", "Attention to Detail"],
-    },
-  };
+  console.log("FeedMeJD: Prompting AI model...");
+
+  const prompt = `
+    Analyze the following job description text.
+    Extract the key skills and provide a brief summary.
+    Return the result ONLY as a valid JSON object in the following format, with no other text or explanations before or after the JSON block.
+    
+    Format:
+    {
+      "summary": "<A 2-3 sentence summary of the role>",
+      "skills": {
+        "hard": ["<skill 1>", "<skill 2>", "..."],
+        "soft": ["<skill 1>", "<skill 2>", "..."]
+      }
+    }
+
+    Job Description:
+    ---
+    ${text}
+    ---
+  `;
+
+  const aiResponse = await session.prompt(prompt);
   
-  // Create a unique ID for this "gem"
+  // Clean the response to ensure it's a valid JSON
+  // The model sometimes wraps the JSON in ```json ... ```
+  const cleanedResponse = aiResponse
+    .replace(/^```json\s*/, '')
+    .replace(/```$/, '')
+    .trim();
+  
+  console.log("FeedMeJD: AI response received and cleaned:", cleanedResponse);
+
+  const result: AnalysisResult = JSON.parse(cleanedResponse);
+
   const gemId = `gem_${Date.now()}`;
-  
-  // Save the result to chrome.storage.local
   await chrome.storage.local.set({ [gemId]: result });
-  console.log(`FeedMeJD: Analysis result saved as ${gemId}.`);
+  console.log(`FeedMeJD: AI analysis result saved as ${gemId}.`);
+
+  // Destroy the session to free up resources
+  await session.destroy();
+  console.log("FeedMeJD: AI session destroyed.");
 
   return result;
 }
