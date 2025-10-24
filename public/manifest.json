@@ -6,7 +6,8 @@
   "permissions": [
     "storage",
     "scripting",
-    "ai"
+    "ai",
+    "tabs"
   ],
   "host_permissions": [
     "https://*.linkedin.com/*"
@@ -14,13 +15,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["https://*.linkedin.com/jobs/*"],
-      "js": ["content.js"],
-      "css": ["assets/content.css"]
-    }
-  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

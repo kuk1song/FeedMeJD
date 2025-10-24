@@ -27,6 +27,27 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
+// --- Background "Air Traffic Controller" ---
+// This is the core of our new programmatic injection logic.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // We are only interested in URL changes, which happen when 'status' is 'complete'.
+  if (changeInfo.status === 'complete' && tab.url) {
+    // Check if the new URL is a LinkedIn jobs page.
+    if (tab.url.includes("linkedin.com/jobs")) {
+      console.log(`FeedMeJD: Detected navigation to a jobs page: ${tab.url}`);
+      // Inject the content script and its CSS.
+      chrome.scripting.insertCSS({
+        target: { tabId: tabId },
+        files: ["assets/content.css"]
+      });
+      chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        files: ["content.js"]
+      });
+    }
+  }
+});
+
 /**
  * Performs AI analysis and saves the result.
  * @param {string} text The job description text.

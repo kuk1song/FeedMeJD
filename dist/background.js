@@ -11,6 +11,21 @@ chrome.runtime.onMessage.addListener(
     }
   }
 );
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && tab.url) {
+    if (tab.url.includes("linkedin.com/jobs")) {
+      console.log(`FeedMeJD: Detected navigation to a jobs page: ${tab.url}`);
+      chrome.scripting.insertCSS({
+        target: { tabId },
+        files: ["assets/content.css"]
+      });
+      chrome.scripting.executeScript({
+        target: { tabId },
+        files: ["content.js"]
+      });
+    }
+  }
+});
 async function handleAIAnalysis(text) {
   if (typeof chrome.ai === "undefined") {
     console.error("FeedMeJD: chrome.ai API is not available in this browser environment.");
