@@ -12,7 +12,7 @@ chrome.runtime.onMessage.addListener(
   }
 );
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.url) {
+  if (changeInfo.status === "complete" && tab.url && tab.url.includes("linkedin.com")) {
     if (tab.url.includes("linkedin.com/jobs")) {
       console.log(`FeedMeJD: Detected navigation to a jobs page: ${tab.url}`);
       chrome.scripting.insertCSS({
@@ -22,6 +22,11 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       chrome.scripting.executeScript({
         target: { tabId },
         files: ["content.js"]
+      });
+    } else {
+      console.log(`FeedMeJD: Navigated away from jobs page. Sending unload command.`);
+      chrome.tabs.sendMessage(tabId, { type: "UNLOAD_PET_UI" }, (response) => {
+        if (chrome.runtime.lastError) ;
       });
     }
   }

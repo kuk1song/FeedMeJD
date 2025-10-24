@@ -30,9 +30,10 @@ chrome.runtime.onMessage.addListener(
 // --- Background "Air Traffic Controller" ---
 // This is the core of our new programmatic injection logic.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // We are only interested in URL changes, which happen when 'status' is 'complete'.
-  if (changeInfo.status === 'complete' && tab.url) {
-    // Check if the new URL is a LinkedIn jobs page.
+  // We are only interested in URL changes for LinkedIn tabs.
+  if (changeInfo.status === 'complete' && tab.url && tab.url.includes("linkedin.com")) {
+    
+    // If it's a jobs page, inject the UI.
     if (tab.url.includes("linkedin.com/jobs")) {
       console.log(`FeedMeJD: Detected navigation to a jobs page: ${tab.url}`);
       // Inject the content script and its CSS.
@@ -43,6 +44,17 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       chrome.scripting.executeScript({
         target: { tabId: tabId },
         files: ["content.js"]
+      });
+    } 
+    // If it's another LinkedIn page, send a message to unload the UI.
+    else {
+      console.log(`FeedMeJD: Navigated away from jobs page. Sending unload command.`);
+      chrome.tabs.sendMessage(tabId, { type: "UNLOAD_PET_UI" }, (response) => {
+        // This callback is used to handle the case where the content script
+        // was never injected, preventing an error message in the console.
+        if (chrome.runtime.lastError) {
+          /* console.log("FeedMeJD: No active content script to unload, which is expected."); */
+        }
       });
     }
   }

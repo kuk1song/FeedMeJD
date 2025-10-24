@@ -137,6 +137,18 @@ if (typeof window.feedMeJdInjected === "undefined") {
         this.updateStateBasedOnJD();
       }, 3500);
     }
+    cleanup() {
+      console.log("FeedMeJD: Cleaning up and unloading Pet UI...");
+      this.observer.disconnect();
+      this.petContainer.remove();
+      window.feedMeJdInjected = void 0;
+    }
   }
-  new PetUIManager();
+  const manager = new PetUIManager();
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === "UNLOAD_PET_UI") {
+      manager.cleanup();
+      sendResponse({ success: true });
+    }
+  });
 }

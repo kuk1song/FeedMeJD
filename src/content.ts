@@ -177,10 +177,26 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         this.updateStateBasedOnJD();
       }, 3500);
     }
+
+    public cleanup(): void {
+      console.log("FeedMeJD: Cleaning up and unloading Pet UI...");
+      this.observer.disconnect();
+      this.petContainer.remove();
+      // @ts-ignore
+      window.feedMeJdInjected = undefined; // Allow re-injection later
+    }
   }
 
   // --- Script Entry Point ---
   // We only need one instance of the manager for the page's lifetime.
-  new PetUIManager();
+  const manager = new PetUIManager();
+
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'UNLOAD_PET_UI') {
+      manager.cleanup();
+      // Optional: send a response to the background script
+      sendResponse({ success: true }); 
+    }
+  });
 
 } // End of injection guard
