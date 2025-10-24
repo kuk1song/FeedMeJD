@@ -1,6 +1,6 @@
 import './content.css';
 
-console.log("FeedMeJD Content Script Loaded!");
+console.log("FeedMeJD Content Script Injected & Running!");
 
 /**
  * Manages all UI and interactions for the pet on the page.
@@ -9,12 +9,13 @@ class PetUIManager {
   private petContainer!: HTMLDivElement;
   private petImage!: HTMLImageElement;
   private feedButton!: HTMLButtonElement;
-  private jdElement: HTMLElement | null;
+  private jdElement: HTMLElement | null = null;
+  private observer: MutationObserver;
 
   constructor() {
-    this.jdElement = document.querySelector('.jobs-description__content');
     this.createUI();
-    this.updateStateBasedOnJD();
+    this.setupObserver();
+    this.runLogic(); // Initial run
   }
 
   /**
@@ -42,6 +43,34 @@ class PetUIManager {
   }
 
   /**
+   * The main logic that runs on page load and on subsequent navigations.
+   */
+  private runLogic(): void {
+     this.updateStateBasedOnJD();
+  }
+
+  /**
+   * Sets up a MutationObserver to watch for SPA navigations.
+   */
+  private setupObserver(): void {
+   this.observer = new MutationObserver((mutations) => {
+     // A simple debounce to avoid firing too often on complex DOM changes.
+     let timeoutId: number;
+     clearTimeout(timeoutId);
+     timeoutId = window.setTimeout(() => {
+       // We're looking for major changes, like the job description appearing or disappearing.
+       // A simple re-run of the logic is often sufficient for SPAs.
+       this.runLogic();
+     }, 500);
+   });
+
+   this.observer.observe(document.body, {
+     childList: true,
+     subtree: true,
+   });
+ }
+
+  /**
    * Sets the visual state of the pet.
    * @param state The state to switch to ('idle', 'hungry', 'eating', 'done', 'feel-good').
    */
@@ -62,12 +91,20 @@ class PetUIManager {
    * Checks for a JD and sets the initial pet state.
    */
   private updateStateBasedOnJD(): void {
+    // The pet should always be visible on jobs pages.
+    // We just determine if it should be "hungry" or "idle".
+    this.jdElement = document.querySelector('.jobs-description__content .jobs-box__html-content, .jobs-description-content__text');
     if (this.jdElement) {
       this.setState('hungry');
       this.feedButton.style.display = 'block';
+      this.feedButton.disabled = false;
+      this.feedButton.title = 'Feed me this JD!';
     } else {
       this.setState('idle');
-      this.feedButton.style.display = 'none';
+      // Don't hide the button, just disable it and provide a helpful tip.
+      this.feedButton.style.display = 'block';
+      this.feedButton.disabled = true;
+      this.feedButton.title = 'Navigate to a specific job posting to feed me!';
     }
   }
 
@@ -75,7 +112,13 @@ class PetUIManager {
    * Handles the click event on the feed button.
    */
   private handleFeedClick(): void {
-    if (!this.jdElement) return;
+    // Re-query the element right before the click
+    this.jdElement = document.querySelector('.jobs-description__content .jobs-box__html-content, .jobs-description-content__text');
+    if (!this.jdElement) {
+      console.warn("FeedMeJD: Feed button clicked, but no JD description found on the page.");
+      this.petImage.title = "I can't find a job description on this page!";
+      return;
+    }
 
     console.log("FeedMeJD: Feed button clicked!");
     this.setState('eating');
@@ -85,8 +128,19 @@ class PetUIManager {
     
     chrome.runtime.sendMessage({ type: "ANALYZE_JD", text: jdText }, (response) => {
       if (chrome.runtime.lastError) {
-        console.error("FeedMeJD: Message sending failed.", chrome.runtime.lastError);
+        console.error("FeedMeJD: Message sending failed.", chrome.runtime.lastError.message);
+        // Handle specific AI errors based on our new background logic
+        const errorMessage = chrome.runtime.lastError.message || ""; // Fallback to empty string
+        if (errorMessage.includes("AI_UNAVAILABLE")) {
+          this.petImage.title = "Sorry! My AI brain isn't supported on this device.";
+        } else if (errorMessage.includes("AI_DOWNLOADING") || errorMessage.includes("AI_DOWNLOAD_REQUIRED")) {
+          this.petImage.title = "My AI brain is downloading... Please try again in a few moments!";
+          this.setState('idle'); // A state indicating waiting might be better
+        } else {
+          this.petImage.title = "Oops! Something went wrong.";
+        }
         this.setState('idle'); // Revert to idle on error
+        this.feedButton.style.display = 'block'; // Show button again
         return;
       }
       
@@ -95,7 +149,9 @@ class PetUIManager {
         this.runSuccessAnimation();
       } else {
         console.error("FeedMeJD: Analysis failed.", response?.error);
+        this.petImage.title = "Sorry! The analysis failed. Please try again.";
         this.setState('idle'); // Revert to idle on error
+        this.feedButton.style.display = 'block'; // Show button again
       }
     });
   }
@@ -113,7 +169,7 @@ class PetUIManager {
       this.setState('feel-good');
     }, 1500);
 
-    // 3. After another delay, return to "Hungry" (since we're still on the page)
+    // 3. After another delay, return to the appropriate state
     setTimeout(() => {
       this.updateStateBasedOnJD();
     }, 3500);
@@ -121,9 +177,5 @@ class PetUIManager {
 }
 
 // --- Script Entry Point ---
-// Ensure the script runs only when the page is fully loaded.
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => new PetUIManager());
-} else {
-    new PetUIManager();
-}
+// We only need one instance of the manager for the page's lifetime.
+new PetUIManager();

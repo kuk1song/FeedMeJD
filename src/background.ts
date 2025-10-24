@@ -33,9 +33,37 @@ chrome.runtime.onMessage.addListener(
  * @returns {Promise<AnalysisResult>} The analysis result.
  */
 async function handleAIAnalysis(text: string): Promise<AnalysisResult> {
-  console.log("FeedMeJD: Initializing AI text session...");
+  // Defensive check: Ensure the chrome.ai API exists before using it.
+  if (typeof chrome.ai === 'undefined') {
+    console.error("FeedMeJD: chrome.ai API is not available in this browser environment.");
+    throw new Error("AI_UNAVAILABLE");
+  }
+
+  // Step 1: Proactively check the availability of the AI model.
+  // This is the core of our "Graceful Degradation" strategy.
+  const availability = await (chrome.ai as any).getAvailability();
   
-  // Use the built-in AI
+  switch (availability) {
+    case 'available':
+      // All good, continue to the analysis.
+      console.log("FeedMeJD: AI model is available.");
+      break;
+    case 'downloading':
+      // The model is downloading, inform the user.
+      console.log("FeedMeJD: AI model is downloading.");
+      throw new Error("AI_DOWNLOADING");
+    case 'downloadable':
+      // The model needs to be downloaded, which might require user interaction.
+      console.log("FeedMeJD: AI model is downloadable.");
+      throw new Error("AI_DOWNLOAD_REQUIRED");
+    case 'unavailable':
+    default:
+      // The device does not meet the requirements.
+      console.error("FeedMeJD: AI model is unavailable on this device.");
+      throw new Error("AI_UNAVAILABLE");
+  }
+
+  console.log("FeedMeJD: Initializing AI text session...");
   const session = await chrome.ai.createTextSession();
 
   console.log("FeedMeJD: Prompting AI model...");

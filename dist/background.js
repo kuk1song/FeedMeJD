@@ -12,17 +12,56 @@ chrome.runtime.onMessage.addListener(
   }
 );
 async function handleAIAnalysis(text) {
-  console.log("FeedMeJD: [Placeholder] Starting simulated AI analysis...");
-  await new Promise((resolve) => setTimeout(resolve, 2e3));
-  const result = {
-    summary: "This is a placeholder summary.",
-    skills: {
-      hard: ["TypeScript", "Vite", "Chrome Extensions"],
-      soft: ["Problem Solving", "Attention to Detail"]
+  if (typeof chrome.ai === "undefined") {
+    console.error("FeedMeJD: chrome.ai API is not available in this browser environment.");
+    throw new Error("AI_UNAVAILABLE");
+  }
+  const availability = await chrome.ai.getAvailability();
+  switch (availability) {
+    case "available":
+      console.log("FeedMeJD: AI model is available.");
+      break;
+    case "downloading":
+      console.log("FeedMeJD: AI model is downloading.");
+      throw new Error("AI_DOWNLOADING");
+    case "downloadable":
+      console.log("FeedMeJD: AI model is downloadable.");
+      throw new Error("AI_DOWNLOAD_REQUIRED");
+    case "unavailable":
+    default:
+      console.error("FeedMeJD: AI model is unavailable on this device.");
+      throw new Error("AI_UNAVAILABLE");
+  }
+  console.log("FeedMeJD: Initializing AI text session...");
+  const session = await chrome.ai.createTextSession();
+  console.log("FeedMeJD: Prompting AI model...");
+  const prompt = `
+    Analyze the following job description text.
+    Extract the key skills and provide a brief summary.
+    Return the result ONLY as a valid JSON object in the following format, with no other text or explanations before or after the JSON block.
+    
+    Format:
+    {
+      "summary": "<A 2-3 sentence summary of the role>",
+      "skills": {
+        "hard": ["<skill 1>", "<skill 2>", "..."],
+        "soft": ["<skill 1>", "<skill 2>", "..."]
+      }
     }
-  };
+
+    Job Description:
+    ---
+    ${text}
+    ---
+  `;
+  const aiResponse = await session.prompt(prompt);
+  const cleanedResponse = aiResponse.replace(/^```json\s*/, "").replace(/```$/, "").trim();
+  console.log("FeedMeJD: AI response received and cleaned:", cleanedResponse);
+  const result = JSON.parse(cleanedResponse);
   const gemId = `gem_${Date.now()}`;
   await chrome.storage.local.set({ [gemId]: result });
-  console.log(`FeedMeJD: Analysis result saved as ${gemId}.`);
+  console.log(`FeedMeJD: AI analysis result saved as ${gemId}.`);
+  await session.destroy();
+  console.log("FeedMeJD: AI session destroyed.");
   return result;
 }
