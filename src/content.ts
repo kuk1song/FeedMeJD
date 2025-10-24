@@ -14,6 +14,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     private feedButton!: HTMLButtonElement;
     private jdElement: HTMLElement | null = null;
     private observer: MutationObserver;
+    private currentJobId: string | null = null; // Track the current job's unique ID
 
     constructor() {
       this.createUI();
@@ -49,7 +50,34 @@ if (typeof window.feedMeJdInjected === 'undefined') {
      * The main logic that runs on page load and on subsequent navigations.
      */
     private runLogic(): void {
-       this.updateStateBasedOnJD();
+      this.currentJobId = this.extractJobId();
+      this.updateStateBasedOnJD();
+    }
+
+    /**
+     * Extracts the unique job ID from the current page URL.
+     * @returns The job ID, or null if not found.
+     */
+    private extractJobId(): string | null {
+      const url = window.location.href;
+      
+      // Try to match patterns like:
+      // /jobs/view/1234567890
+      // ?currentJobId=4267263288
+      const patterns = [
+        /\/jobs\/view\/(\d+)/,
+        /currentJobId=(\d+)/,
+        /\/jobs\/(\d+)\//
+      ];
+      
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+          return match[1];
+        }
+      }
+      
+      return null;
     }
 
     /**
@@ -92,23 +120,54 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     
     /**
      * Checks for a JD and sets the initial pet state.
+     * Also checks if this job has already been analyzed.
      */
-    private updateStateBasedOnJD(): void {
-      // The pet should always be visible on jobs pages.
-      // We just determine if it should be "hungry" or "idle".
+    private async updateStateBasedOnJD(): Promise<void> {
       this.jdElement = document.querySelector('.jobs-description__content .jobs-box__html-content, .jobs-description-content__text');
-      if (this.jdElement) {
+      
+      if (this.jdElement && this.currentJobId) {
+        // Check if this job has already been analyzed
+        const isAnalyzed = await this.isJobAnalyzed(this.currentJobId);
+        
+        if (isAnalyzed) {
+          // This job was already analyzed - show "done" state
+          this.setState('done');
+          this.petImage.title = "I've already analyzed this job! Check the dashboard to see the results.";
+          this.feedButton.style.display = 'none';
+        } else {
+          // This is a new job - show "hungry" state
+          this.setState('hungry');
+          this.feedButton.style.display = 'block';
+          this.feedButton.disabled = false;
+          this.feedButton.title = 'Feed me this JD!';
+        }
+      } else if (this.jdElement && !this.currentJobId) {
+        // JD exists but we couldn't extract a job ID - still allow feeding
         this.setState('hungry');
         this.feedButton.style.display = 'block';
         this.feedButton.disabled = false;
         this.feedButton.title = 'Feed me this JD!';
       } else {
+        // No JD found on this page
         this.setState('idle');
-        // Don't hide the button, just disable it and provide a helpful tip.
         this.feedButton.style.display = 'block';
         this.feedButton.disabled = true;
         this.feedButton.title = 'Navigate to a specific job posting to feed me!';
       }
+    }
+
+    /**
+     * Checks if a job has already been analyzed.
+     * @param jobId The job's unique ID.
+     * @returns True if the job has been analyzed, false otherwise.
+     */
+    private async isJobAnalyzed(jobId: string): Promise<boolean> {
+      return new Promise((resolve) => {
+        chrome.storage.local.get(['analyzedJobs'], (result) => {
+          const analyzedJobs: string[] = result.analyzedJobs || [];
+          resolve(analyzedJobs.includes(jobId));
+        });
+      });
     }
 
     /**
@@ -169,7 +228,12 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     private runSuccessAnimation(): void {
       console.log("FeedMeJD: Starting success animation!");
       
-      // 1. Show "Done" state and the gem - this state will persist
+      // 1. Save this job ID as analyzed
+      if (this.currentJobId) {
+        this.markJobAsAnalyzed(this.currentJobId);
+      }
+      
+      // 2. Show "Done" state and the gem - this state will persist
       console.log("FeedMeJD: Switching to 'done' state...");
       this.setState('done');
       this.petImage.title = "Analysis complete! I've saved this JD as a skill gem.";
@@ -178,6 +242,22 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       this.feedButton.style.display = 'none';
       
       // TODO: Create and show the gem element visually with an animation
+    }
+
+    /**
+     * Marks a job as analyzed by saving its ID to storage.
+     * @param jobId The job's unique ID.
+     */
+    private markJobAsAnalyzed(jobId: string): void {
+      chrome.storage.local.get(['analyzedJobs'], (result) => {
+        const analyzedJobs: string[] = result.analyzedJobs || [];
+        if (!analyzedJobs.includes(jobId)) {
+          analyzedJobs.push(jobId);
+          chrome.storage.local.set({ analyzedJobs }, () => {
+            console.log(`FeedMeJD: Job ${jobId} marked as analyzed.`);
+          });
+        }
+      });
     }
 
     public cleanup(): void {

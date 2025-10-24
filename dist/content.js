@@ -7,6 +7,8 @@ if (typeof window.feedMeJdInjected === "undefined") {
     feedButton;
     jdElement = null;
     observer;
+    currentJobId = null;
+    // Track the current job's unique ID
     constructor() {
       this.createUI();
       this.setupObserver();
@@ -34,7 +36,27 @@ if (typeof window.feedMeJdInjected === "undefined") {
      * The main logic that runs on page load and on subsequent navigations.
      */
     runLogic() {
+      this.currentJobId = this.extractJobId();
       this.updateStateBasedOnJD();
+    }
+    /**
+     * Extracts the unique job ID from the current page URL.
+     * @returns The job ID, or null if not found.
+     */
+    extractJobId() {
+      const url = window.location.href;
+      const patterns = [
+        /\/jobs\/view\/(\d+)/,
+        /currentJobId=(\d+)/,
+        /\/jobs\/(\d+)\//
+      ];
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+          return match[1];
+        }
+      }
+      return null;
     }
     /**
      * Sets up a MutationObserver to watch for SPA navigations.
@@ -69,10 +91,23 @@ if (typeof window.feedMeJdInjected === "undefined") {
     }
     /**
      * Checks for a JD and sets the initial pet state.
+     * Also checks if this job has already been analyzed.
      */
-    updateStateBasedOnJD() {
+    async updateStateBasedOnJD() {
       this.jdElement = document.querySelector(".jobs-description__content .jobs-box__html-content, .jobs-description-content__text");
-      if (this.jdElement) {
+      if (this.jdElement && this.currentJobId) {
+        const isAnalyzed = await this.isJobAnalyzed(this.currentJobId);
+        if (isAnalyzed) {
+          this.setState("done");
+          this.petImage.title = "I've already analyzed this job! Check the dashboard to see the results.";
+          this.feedButton.style.display = "none";
+        } else {
+          this.setState("hungry");
+          this.feedButton.style.display = "block";
+          this.feedButton.disabled = false;
+          this.feedButton.title = "Feed me this JD!";
+        }
+      } else if (this.jdElement && !this.currentJobId) {
         this.setState("hungry");
         this.feedButton.style.display = "block";
         this.feedButton.disabled = false;
@@ -83,6 +118,19 @@ if (typeof window.feedMeJdInjected === "undefined") {
         this.feedButton.disabled = true;
         this.feedButton.title = "Navigate to a specific job posting to feed me!";
       }
+    }
+    /**
+     * Checks if a job has already been analyzed.
+     * @param jobId The job's unique ID.
+     * @returns True if the job has been analyzed, false otherwise.
+     */
+    async isJobAnalyzed(jobId) {
+      return new Promise((resolve) => {
+        chrome.storage.local.get(["analyzedJobs"], (result) => {
+          const analyzedJobs = result.analyzedJobs || [];
+          resolve(analyzedJobs.includes(jobId));
+        });
+      });
     }
     /**
      * Handles the click event on the feed button.
@@ -132,10 +180,28 @@ if (typeof window.feedMeJdInjected === "undefined") {
      */
     runSuccessAnimation() {
       console.log("FeedMeJD: Starting success animation!");
+      if (this.currentJobId) {
+        this.markJobAsAnalyzed(this.currentJobId);
+      }
       console.log("FeedMeJD: Switching to 'done' state...");
       this.setState("done");
       this.petImage.title = "Analysis complete! I've saved this JD as a skill gem.";
       this.feedButton.style.display = "none";
+    }
+    /**
+     * Marks a job as analyzed by saving its ID to storage.
+     * @param jobId The job's unique ID.
+     */
+    markJobAsAnalyzed(jobId) {
+      chrome.storage.local.get(["analyzedJobs"], (result) => {
+        const analyzedJobs = result.analyzedJobs || [];
+        if (!analyzedJobs.includes(jobId)) {
+          analyzedJobs.push(jobId);
+          chrome.storage.local.set({ analyzedJobs }, () => {
+            console.log(`FeedMeJD: Job ${jobId} marked as analyzed.`);
+          });
+        }
+      });
     }
     cleanup() {
       console.log("FeedMeJD: Cleaning up and unloading Pet UI...");
