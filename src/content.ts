@@ -167,17 +167,22 @@ if (typeof window.feedMeJdInjected === 'undefined') {
      * Runs the sequence of animations after a successful analysis.
      */
     private runSuccessAnimation(): void {
+      console.log("FeedMeJD: Starting success animation!");
+      
       // 1. Show "Done" state and the gem
+      console.log("FeedMeJD: Switching to 'done' state...");
       this.setState('done');
       // TODO: Create and show the gem element visually
       
       // 2. After a delay, switch to "Feel Good"
       setTimeout(() => {
+        console.log("FeedMeJD: Switching to 'feel-good' state...");
         this.setState('feel-good');
       }, 1500);
 
       // 3. After another delay, return to the appropriate state
       setTimeout(() => {
+        console.log("FeedMeJD: Animation complete, returning to normal state...");
         this.updateStateBasedOnJD();
       }, 3500);
     }

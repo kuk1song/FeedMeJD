@@ -131,11 +131,15 @@ if (typeof window.feedMeJdInjected === "undefined") {
      * Runs the sequence of animations after a successful analysis.
      */
     runSuccessAnimation() {
+      console.log("FeedMeJD: Starting success animation!");
+      console.log("FeedMeJD: Switching to 'done' state...");
       this.setState("done");
       setTimeout(() => {
+        console.log("FeedMeJD: Switching to 'feel-good' state...");
         this.setState("feel-good");
       }, 1500);
       setTimeout(() => {
+        console.log("FeedMeJD: Animation complete, returning to normal state...");
         this.updateStateBasedOnJD();
       }, 3500);
     }
