@@ -97,7 +97,9 @@ if (typeof window.feedMeJdInjected === "undefined") {
       console.log("FeedMeJD: Feed button clicked!");
       this.setState("eating");
       this.feedButton.style.display = "none";
+      this.petImage.title = "Analyzing... This may take a while if the AI model needs to download!";
       const jdText = this.jdElement.innerText;
+      console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters). Sending to background...`);
       chrome.runtime.sendMessage({ type: "ANALYZE_JD", text: jdText }, (response) => {
         if (chrome.runtime.lastError) {
           console.error("FeedMeJD: Message sending failed.", chrome.runtime.lastError.message);

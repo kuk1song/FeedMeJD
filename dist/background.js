@@ -76,14 +76,20 @@ async function handleAIAnalysis(text) {
     console.warn(`FeedMeJD: Unknown availability status: ${availability}. Attempting to proceed...`);
   }
   console.log("FeedMeJD: Creating AI language model session...");
+  let downloadStarted = false;
   const session = await languageModelAPI.create({
     // Specify expected output language to ensure optimal quality and safety
     monitor(m) {
       m.addEventListener("downloadprogress", (e) => {
+        if (!downloadStarted) {
+          console.log("FeedMeJD: Model download started!");
+          downloadStarted = true;
+        }
         console.log(`FeedMeJD: Model download progress: ${(e.loaded * 100).toFixed(0)}%`);
       });
     }
   });
+  console.log("FeedMeJD: Session created successfully!");
   console.log("FeedMeJD: Prompting AI model...");
   const prompt = `
     Analyze the following job description text.
