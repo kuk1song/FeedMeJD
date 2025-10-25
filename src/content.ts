@@ -280,6 +280,10 @@ if (typeof window.feedMeJdInjected === 'undefined') {
 
       console.log("FeedMeJD: Cat head clicked! Starting analysis...");
       
+      // ✅ CRITICAL: Capture the job ID at the moment of clicking
+      // This snapshot will be used throughout the async operation
+      const jobIdSnapshot = this.currentJobId;
+      
       // Set analyzing flag to prevent MutationObserver from resetting state
       this.isAnalyzing = true;
       
@@ -290,7 +294,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       this.petContainer.classList.add('analyzing');
 
       const jdText = this.jdElement.innerText;
-      console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters). Sending to background...`);
+      console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters) for job ${jobIdSnapshot || 'unknown'}. Sending to background...`);
       
       chrome.runtime.sendMessage({ type: "ANALYZE_JD", text: jdText }, (response) => {
         // Remove analyzing state
@@ -314,9 +318,22 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         }
         
         if (response && response.success) {
-          console.log("FeedMeJD: Analysis successful.", response.data);
-          this.runSuccessAnimation();
-          // Flag will be cleared in runSuccessAnimation after completion
+          console.log("FeedMeJD: Analysis successful for job", jobIdSnapshot || 'unknown');
+          
+          // ✅ CRITICAL: Check if user is still on the same job
+          // Only show success animation if we're still on the job that was analyzed
+          if (this.currentJobId === jobIdSnapshot) {
+            this.runSuccessAnimation(jobIdSnapshot);
+          } else {
+            console.warn(`FeedMeJD: User navigated away. Analysis was for job ${jobIdSnapshot}, but now viewing ${this.currentJobId}. Saving silently without UI update.`);
+            // Still save the analyzed job, but don't update UI
+            if (jobIdSnapshot) {
+              this.markJobAsAnalyzed(jobIdSnapshot);
+            }
+            this.isAnalyzing = false;
+            // Re-run logic to update UI for the current job
+            this.runLogic();
+          }
         } else {
           console.error("FeedMeJD: Analysis failed.", response?.error);
           this.petImage.title = "Sorry! The analysis failed. Please try again.";
@@ -329,13 +346,14 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     /**
      * Runs the sequence of animations after a successful analysis.
      * Shows celebration gem → switches to done state.
+     * @param analyzedJobId The ID of the job that was actually analyzed (snapshot from when analysis started)
      */
-    private runSuccessAnimation(): void {
-      console.log("FeedMeJD: Starting success animation!");
+    private runSuccessAnimation(analyzedJobId: string | null): void {
+      console.log("FeedMeJD: Starting success animation for job", analyzedJobId || 'unknown');
       
-      // 1. Save this job ID as analyzed
-      if (this.currentJobId) {
-        this.markJobAsAnalyzed(this.currentJobId);
+      // 1. Save the ANALYZED job ID (not current job ID)
+      if (analyzedJobId) {
+        this.markJobAsAnalyzed(analyzedJobId);
       }
       
       // 2. Show celebration gem (will auto-remove after 1.1s)
@@ -344,11 +362,18 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       // 3. After a short delay, switch to done state
       // The gem animation overlaps with this transition for smooth effect
       setTimeout(() => {
-        console.log("FeedMeJD: Switching to 'done' state...");
-        this.setState('done');
-        this.petImage.title = "Click to view analysis in dashboard";
-        this.tooltip.textContent = "View Dashboard";
-        this.petContainer.classList.add('completed');
+        // ✅ Double-check: Only update UI if we're STILL on the analyzed job
+        if (this.currentJobId === analyzedJobId) {
+          console.log("FeedMeJD: Switching to 'done' state...");
+          this.setState('done');
+          this.petImage.title = "Click to view analysis in dashboard";
+          this.tooltip.textContent = "View Dashboard";
+          this.petContainer.classList.add('completed');
+        } else {
+          console.log(`FeedMeJD: User navigated away during animation. Skipping UI update.`);
+          // Update UI for current job instead
+          this.runLogic();
+        }
         this.isAnalyzing = false; // Clear flag after animation completes
       }, 300); // Slight delay so user sees gem appear first
     }

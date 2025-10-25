@@ -208,12 +208,13 @@ if (typeof window.feedMeJdInjected === "undefined") {
         return;
       }
       console.log("FeedMeJD: Cat head clicked! Starting analysis...");
+      const jobIdSnapshot = this.currentJobId;
       this.isAnalyzing = true;
       this.setState("eating");
       this.petImage.title = "Analyzing... This may take a while if the AI model needs to download!";
       this.petContainer.classList.add("analyzing");
       const jdText = this.jdElement.innerText;
-      console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters). Sending to background...`);
+      console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters) for job ${jobIdSnapshot || "unknown"}. Sending to background...`);
       chrome.runtime.sendMessage({ type: "ANALYZE_JD", text: jdText }, (response) => {
         this.petContainer.classList.remove("analyzing");
         if (chrome.runtime.lastError) {
@@ -232,8 +233,17 @@ if (typeof window.feedMeJdInjected === "undefined") {
           return;
         }
         if (response && response.success) {
-          console.log("FeedMeJD: Analysis successful.", response.data);
-          this.runSuccessAnimation();
+          console.log("FeedMeJD: Analysis successful for job", jobIdSnapshot || "unknown");
+          if (this.currentJobId === jobIdSnapshot) {
+            this.runSuccessAnimation(jobIdSnapshot);
+          } else {
+            console.warn(`FeedMeJD: User navigated away. Analysis was for job ${jobIdSnapshot}, but now viewing ${this.currentJobId}. Saving silently without UI update.`);
+            if (jobIdSnapshot) {
+              this.markJobAsAnalyzed(jobIdSnapshot);
+            }
+            this.isAnalyzing = false;
+            this.runLogic();
+          }
         } else {
           console.error("FeedMeJD: Analysis failed.", response?.error);
           this.petImage.title = "Sorry! The analysis failed. Please try again.";
@@ -245,19 +255,25 @@ if (typeof window.feedMeJdInjected === "undefined") {
     /**
      * Runs the sequence of animations after a successful analysis.
      * Shows celebration gem → switches to done state.
+     * @param analyzedJobId The ID of the job that was actually analyzed (snapshot from when analysis started)
      */
-    runSuccessAnimation() {
-      console.log("FeedMeJD: Starting success animation!");
-      if (this.currentJobId) {
-        this.markJobAsAnalyzed(this.currentJobId);
+    runSuccessAnimation(analyzedJobId) {
+      console.log("FeedMeJD: Starting success animation for job", analyzedJobId || "unknown");
+      if (analyzedJobId) {
+        this.markJobAsAnalyzed(analyzedJobId);
       }
       this.showCelebrationGem();
       setTimeout(() => {
-        console.log("FeedMeJD: Switching to 'done' state...");
-        this.setState("done");
-        this.petImage.title = "Click to view analysis in dashboard";
-        this.tooltip.textContent = "View Dashboard";
-        this.petContainer.classList.add("completed");
+        if (this.currentJobId === analyzedJobId) {
+          console.log("FeedMeJD: Switching to 'done' state...");
+          this.setState("done");
+          this.petImage.title = "Click to view analysis in dashboard";
+          this.tooltip.textContent = "View Dashboard";
+          this.petContainer.classList.add("completed");
+        } else {
+          console.log(`FeedMeJD: User navigated away during animation. Skipping UI update.`);
+          this.runLogic();
+        }
         this.isAnalyzing = false;
       }, 300);
     }
