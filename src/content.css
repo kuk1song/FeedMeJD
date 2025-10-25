@@ -1,21 +1,36 @@
-/* FeedMeJD - Edge-peeking elegant design */
+/* FeedMeJD - Compact elegant design */
 body {
   position: relative;
 }
 
 #feedmejd-pet-container {
   position: fixed;
-  top: 50%;
-  right: -80px; /* Hidden by default, only left edge visible (adjusted for larger cat) */
+  top: 33%; /* Upper third - safe zone, avoiding bottom plugin clusters */
+  right: 16px; /* Fully visible with padding */
   transform: translateY(-50%);
-  z-index: 9999;
-  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10000; /* Higher than most plugins */
+  
+  /* Circular container */
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
   cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Slide in on hover */
+/* Hover: Slightly enlarge and fully visible */
 #feedmejd-pet-container:hover {
-  right: 0;
+  opacity: 1;
+  transform: translateY(-50%) scale(1.125);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
 }
 
 /* Tooltip container */
@@ -24,12 +39,12 @@ body {
   right: 100%;
   top: 50%;
   transform: translateY(-50%) translateX(10px);
-  margin-right: 12px;
-  padding: 10px 18px;
+  margin-right: 16px;
+  padding: 8px 16px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   opacity: 0;
@@ -43,13 +58,13 @@ body {
   content: '';
   position: absolute;
   top: 50%;
-  right: -8px;
+  right: -6px;
   transform: translateY(-50%);
   width: 0;
   height: 0;
-  border-left: 8px solid #764ba2;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
+  border-left: 6px solid #764ba2;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
 }
 
 /* Show tooltip on hover */
@@ -59,13 +74,12 @@ body {
 }
 
 #feedmejd-pet-img {
-  width: 120px;
-  height: 120px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
-  cursor: pointer;
   background: transparent;
   mix-blend-mode: normal;
-  transition: transform 0.2s ease-in-out;
+  /* Remove cursor and transition - handled by container */
 }
 
 /* Eating animation - a gentle pulse that suggests digesting/processing */
@@ -91,4 +105,26 @@ body {
   transition: transform 0.2s ease-in-out;
 }
 
-/* Button is now deprecated - click on cat head directly */
+/* State-specific styles */
+#feedmejd-pet-container.analyzing {
+  animation: analyzing-pulse 1.5s ease-in-out infinite;
+  cursor: wait;
+}
+
+@keyframes analyzing-pulse {
+  0%, 100% { 
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  50% { 
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  }
+}
+
+#feedmejd-pet-container.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#feedmejd-pet-container.disabled:hover {
+  transform: translateY(-50%) scale(1); /* No scale on hover when disabled */
+}
