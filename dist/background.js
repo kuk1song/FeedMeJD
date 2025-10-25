@@ -8,9 +8,29 @@ chrome.runtime.onMessage.addListener(
         sendResponse({ success: false, error: error.message });
       });
       return true;
+    } else if (request.type === "OPEN_DASHBOARD") {
+      console.log("FeedMeJD: Opening dashboard");
+      openOrSwitchToDashboard();
+      sendResponse({ success: true });
+      return false;
     }
   }
 );
+function openOrSwitchToDashboard() {
+  const dashboardUrl = chrome.runtime.getURL("dashboard.html");
+  chrome.tabs.query({}, (tabs) => {
+    const existingDashboardTab = tabs.find((tab) => tab.url === dashboardUrl);
+    if (existingDashboardTab && existingDashboardTab.id) {
+      chrome.tabs.update(existingDashboardTab.id, { active: true }, () => {
+        if (existingDashboardTab.windowId) {
+          chrome.windows.update(existingDashboardTab.windowId, { focused: true });
+        }
+      });
+    } else {
+      chrome.tabs.create({ url: dashboardUrl });
+    }
+  });
+}
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url && tab.url.includes("linkedin.com")) {
     if (tab.url.includes("linkedin.com/jobs")) {

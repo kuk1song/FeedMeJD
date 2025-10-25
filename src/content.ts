@@ -18,10 +18,13 @@ if (typeof window.feedMeJdInjected === 'undefined') {
   class PetUIManager {
     private petContainer!: HTMLDivElement;
     private petImage!: HTMLImageElement;
+    private tooltip!: HTMLDivElement;
     private jdElement: HTMLElement | null = null;
     private observer!: MutationObserver;
     private timeoutId?: number;
-    private currentJobId: string | null = null; // Track the current job's unique ID
+    private currentJobId: string | null = null;
+    private isAnalyzing: boolean = false;
+    private currentState: 'idle' | 'hungry' | 'eating' | 'done' = 'idle'; // Track current state to avoid redundant updates
 
     constructor() {
       this.createUI();
@@ -31,7 +34,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
 
     /**
      * Creates the pet's UI elements and injects them into the page.
-     * New elegant design: edge-peeking cat head with tooltip.
+     * Compact circular design with gem badge for completed jobs.
      */
     private createUI(): void {
       this.petContainer = document.createElement('div');
@@ -42,19 +45,19 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       this.petImage.id = 'feedmejd-pet-img';
       this.petImage.title = 'Click me to analyze this job!';
 
-      // Tooltip (replaces the button)
-      const tooltip = document.createElement('div');
-      tooltip.className = 'feedmejd-tooltip';
-      tooltip.textContent = 'Feed Me JD!';
+      // Tooltip
+      this.tooltip = document.createElement('div');
+      this.tooltip.className = 'feedmejd-tooltip';
+      this.tooltip.textContent = 'Feed Me JD!';
 
-      this.petContainer.appendChild(tooltip);
+      this.petContainer.appendChild(this.tooltip);
       this.petContainer.appendChild(this.petImage);
       document.body.appendChild(this.petContainer);
 
-      // Click on the entire container (cat head) to trigger analysis
-      this.petContainer.addEventListener('click', this.handleFeedClick.bind(this));
+      // Click on the entire container (cat head) to trigger analysis or view dashboard
+      this.petContainer.addEventListener('click', this.handlePetClick.bind(this));
       
-      console.log("FeedMeJD: Pet UI injected (edge-peeking design).");
+      console.log("FeedMeJD: Pet UI injected (compact design).");
     }
 
     /**
@@ -115,9 +118,17 @@ if (typeof window.feedMeJdInjected === 'undefined') {
 
     /**
      * Sets the visual state of the pet.
-     * @param state The state to switch to ('idle', 'hungry', 'eating', 'done', 'feel-good').
+     * Only updates if the state actually changes to avoid redundant DOM operations.
      */
     private setState(state: 'idle' | 'hungry' | 'eating' | 'done'): void {
+      // Skip if already in this state
+      if (this.currentState === state) {
+        return;
+      }
+      
+      console.log(`FeedMeJD: State change: ${this.currentState} → ${state}`);
+      this.currentState = state;
+      
       const stateDetails = {
         idle: { img: 'pet-idle.png', title: 'Hello! I am FeedMeJD!' },
         hungry: { img: 'pet-hungry.png', title: 'I am hungry for this JD!' },
@@ -131,6 +142,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       // Add or remove the animation class based on the state
       if (state === 'eating') {
         this.petImage.classList.add('is-eating');
+        console.log("FeedMeJD: Added 'is-eating' class. Animation should be visible now!");
       } else {
         this.petImage.classList.remove('is-eating');
       }
@@ -139,38 +151,64 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     /**
      * Checks for a JD and sets the initial pet state.
      * Also checks if this job has already been analyzed.
-     * New design: Compact circular button with CSS classes for states.
+     * Completed jobs are clickable to view dashboard (no persistent badge).
      */
     private async updateStateBasedOnJD(): Promise<void> {
+      // Don't update state if currently analyzing - prevents MutationObserver from interrupting
+      if (this.isAnalyzing) {
+        console.log("FeedMeJD: Skipping state update - analysis in progress");
+        return;
+      }
+      
       this.jdElement = document.querySelector('.jobs-description__content .jobs-box__html-content, .jobs-description-content__text');
       
       // Remove all state classes first
-      this.petContainer.classList.remove('disabled', 'analyzing');
+      this.petContainer.classList.remove('disabled', 'analyzing', 'completed');
       
       if (this.jdElement && this.currentJobId) {
         // Check if this job has already been analyzed
         const isAnalyzed = await this.isJobAnalyzed(this.currentJobId);
         
         if (isAnalyzed) {
-          // This job was already analyzed - show "done" state
+          // This job was already analyzed - show "done" state (done image has gem)
           this.setState('done');
-          this.petImage.title = "Already analyzed! Check dashboard.";
-          this.petContainer.classList.add('disabled');
+          this.petImage.title = "Click to view analysis in dashboard";
+          this.tooltip.textContent = "View Dashboard";
+          this.petContainer.classList.add('completed');
+          // No badge needed - the done image already has a gem
         } else {
           // This is a new job - show "hungry" state
           this.setState('hungry');
           this.petImage.title = 'Click me to analyze this job!';
+          this.tooltip.textContent = "Feed Me JD!";
         }
       } else if (this.jdElement && !this.currentJobId) {
         // JD exists but we couldn't extract a job ID - still allow feeding
         this.setState('hungry');
         this.petImage.title = 'Click me to analyze this job!';
-      } else {
+        this.tooltip.textContent = "Feed Me JD!";
+  } else {
         // No JD found on this page
         this.setState('idle');
         this.petImage.title = 'Navigate to a job posting!';
+        this.tooltip.textContent = "Find a job first!";
         this.petContainer.classList.add('disabled');
-      }
+  }
+}
+
+/**
+     * Shows a celebration gem badge animation, then removes it.
+     */
+    private showCelebrationGem(): void {
+      const badge = document.createElement('div');
+      badge.className = 'feedmejd-gem-badge';
+      badge.innerHTML = '💎'; // Gem emoji
+      this.petContainer.appendChild(badge);
+      
+      // Remove after animation completes (0.5s pop + 0.3s hold + 0.3s fade = 1.1s)
+      setTimeout(() => {
+        badge.remove();
+      }, 1100);
     }
 
     /**
@@ -188,17 +226,26 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     }
 
     /**
-     * Handles the click event on the pet container (cat head).
-     * New design: Direct click on compact circular button.
+     * Handles the click event on the pet container.
+     * - If completed: Opens dashboard
+     * - If hungry: Starts analysis
+     * - If disabled/analyzing: Does nothing
      */
-    private handleFeedClick(): void {
-      // Prevent clicks if disabled
+    private handlePetClick(): void {
+      // Prevent clicks if disabled or analyzing
       if (this.petContainer.classList.contains('disabled') || 
           this.petContainer.classList.contains('analyzing')) {
         return;
       }
       
-      // Re-query the element right before the click
+      // If already completed, open dashboard instead of re-analyzing
+      if (this.petContainer.classList.contains('completed')) {
+        console.log("FeedMeJD: Opening dashboard for completed job");
+        chrome.runtime.sendMessage({ type: "OPEN_DASHBOARD" });
+        return;
+      }
+      
+      // Otherwise, proceed with analysis
       this.jdElement = document.querySelector('.jobs-description__content .jobs-box__html-content, .jobs-description-content__text');
       if (!this.jdElement) {
         console.warn("FeedMeJD: Cat clicked, but no JD description found on the page.");
@@ -207,6 +254,10 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       }
 
       console.log("FeedMeJD: Cat head clicked! Starting analysis...");
+      
+      // Set analyzing flag to prevent MutationObserver from resetting state
+      this.isAnalyzing = true;
+      
       this.setState('eating');
       
       // Update pet's title and add analyzing state
@@ -233,22 +284,26 @@ if (typeof window.feedMeJdInjected === 'undefined') {
             this.petImage.title = "Oops! Something went wrong.";
           }
           this.setState('idle');
+          this.isAnalyzing = false; // Clear flag on error
           return;
         }
         
         if (response && response.success) {
           console.log("FeedMeJD: Analysis successful.", response.data);
           this.runSuccessAnimation();
+          // Flag will be cleared in runSuccessAnimation after completion
         } else {
           console.error("FeedMeJD: Analysis failed.", response?.error);
           this.petImage.title = "Sorry! The analysis failed. Please try again.";
           this.setState('idle');
+          this.isAnalyzing = false; // Clear flag on failure
         }
       });
     }
 
     /**
      * Runs the sequence of animations after a successful analysis.
+     * Shows celebration gem → switches to done state.
      */
     private runSuccessAnimation(): void {
       console.log("FeedMeJD: Starting success animation!");
@@ -258,15 +313,19 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         this.markJobAsAnalyzed(this.currentJobId);
       }
       
-      // 2. Show "Done" state - this state will persist
-      console.log("FeedMeJD: Switching to 'done' state...");
-      this.setState('done');
-      this.petImage.title = "Analysis complete! Click extension icon to view results.";
+      // 2. Show celebration gem (will auto-remove after 1.1s)
+      this.showCelebrationGem();
       
-      // Add disabled state for analyzed jobs
-      this.petContainer.classList.add('disabled');
-      
-      // TODO: Create and show the gem element visually with an animation
+      // 3. After a short delay, switch to done state
+      // The gem animation overlaps with this transition for smooth effect
+      setTimeout(() => {
+        console.log("FeedMeJD: Switching to 'done' state...");
+        this.setState('done');
+        this.petImage.title = "Click to view analysis in dashboard";
+        this.tooltip.textContent = "View Dashboard";
+        this.petContainer.classList.add('completed');
+        this.isAnalyzing = false; // Clear flag after animation completes
+      }, 300); // Slight delay so user sees gem appear first
     }
 
     /**
@@ -281,9 +340,9 @@ if (typeof window.feedMeJdInjected === 'undefined') {
           chrome.storage.local.set({ analyzedJobs }, () => {
             console.log(`FeedMeJD: Job ${jobId} marked as analyzed.`);
           });
-        }
-      });
     }
+  });
+}
 
     public cleanup(): void {
       console.log("FeedMeJD: Cleaning up and unloading Pet UI...");
@@ -294,7 +353,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     }
   }
 
-  // --- Script Entry Point ---
+// --- Script Entry Point ---
   // We only need one instance of the manager for the page's lifetime.
   const manager = new PetUIManager();
 

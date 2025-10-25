@@ -11,11 +11,11 @@ interface AnalysisResult {
 
 // --- Main Event Listener ---
 chrome.runtime.onMessage.addListener(
-  (request: { type: string, text: string }, sender, sendResponse) => {
+  (request: { type: string, text?: string }, sender, sendResponse) => {
     if (request.type === "ANALYZE_JD") {
       console.log("FeedMeJD: Received JD to analyze.");
       
-      handleAIAnalysis(request.text)
+      handleAIAnalysis(request.text!)
         .then(result => sendResponse({ success: true, data: result }))
         .catch(error => {
           console.error("FeedMeJD: Error in background analysis.", error);
@@ -23,9 +23,37 @@ chrome.runtime.onMessage.addListener(
         });
       
       return true; // Indicates asynchronous response
+    } else if (request.type === "OPEN_DASHBOARD") {
+      console.log("FeedMeJD: Opening dashboard");
+      openOrSwitchToDashboard();
+      sendResponse({ success: true });
+      return false;
     }
   }
 );
+
+/**
+ * Opens the dashboard in a new tab, or switches to it if already open.
+ */
+function openOrSwitchToDashboard(): void {
+  const dashboardUrl = chrome.runtime.getURL('dashboard.html');
+  
+  chrome.tabs.query({}, (tabs) => {
+    const existingDashboardTab = tabs.find(tab => tab.url === dashboardUrl);
+    
+    if (existingDashboardTab && existingDashboardTab.id) {
+      // Dashboard is already open - switch to it
+      chrome.tabs.update(existingDashboardTab.id, { active: true }, () => {
+        if (existingDashboardTab.windowId) {
+          chrome.windows.update(existingDashboardTab.windowId, { focused: true });
+        }
+      });
+    } else {
+      // Dashboard is not open - create a new tab
+      chrome.tabs.create({ url: dashboardUrl });
+    }
+  });
+}
 
 // --- Background "Air Traffic Controller" ---
 // This is the core of our new programmatic injection logic.
@@ -84,9 +112,9 @@ function getLanguageModelFactory(): AILanguageModelFactory | null {
   }
   
   // Try modern API (for non-Service Worker contexts)
-  if (typeof self.ai !== 'undefined' && self.ai?.languageModel) {
+  if (typeof (self as any).ai !== 'undefined' && (self as any).ai?.languageModel) {
     console.log("FeedMeJD: Using self.ai.languageModel API");
-    return self.ai.languageModel;
+    return (self as any).ai.languageModel;
   }
   
   // Try window.ai.languageModel (if window is available)
