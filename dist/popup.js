@@ -3,8 +3,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const openDashboardBtn = document.getElementById("open-dashboard");
   loadGemCount();
   openDashboardBtn.addEventListener("click", () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL("dashboard.html") });
+    openOrSwitchToDashboard();
   });
+  function openOrSwitchToDashboard() {
+    const dashboardUrl = chrome.runtime.getURL("dashboard.html");
+    chrome.tabs.query({}, (tabs) => {
+      const existingDashboardTab = tabs.find((tab) => tab.url === dashboardUrl);
+      if (existingDashboardTab && existingDashboardTab.id) {
+        chrome.tabs.update(existingDashboardTab.id, { active: true }, () => {
+          if (existingDashboardTab.windowId) {
+            chrome.windows.update(existingDashboardTab.windowId, { focused: true });
+          }
+        });
+      } else {
+        chrome.tabs.create({ url: dashboardUrl });
+      }
+    });
+  }
   function loadGemCount() {
     chrome.storage.local.get(null, (items) => {
       const gemKeys = Object.keys(items).filter((key) => key.startsWith("gem_"));

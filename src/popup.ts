@@ -6,10 +6,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load and display gem count
   loadGemCount();
 
-  // Open dashboard in new tab
+  // Open dashboard in new tab (or switch to existing one)
   openDashboardBtn.addEventListener('click', () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
+    openOrSwitchToDashboard();
   });
+
+  /**
+   * Opens the dashboard in a new tab, or switches to it if already open.
+   */
+  function openOrSwitchToDashboard(): void {
+    const dashboardUrl = chrome.runtime.getURL('dashboard.html');
+    
+    // Search for an existing dashboard tab
+    chrome.tabs.query({}, (tabs) => {
+      const existingDashboardTab = tabs.find(tab => tab.url === dashboardUrl);
+      
+      if (existingDashboardTab && existingDashboardTab.id) {
+        // Dashboard is already open - switch to it
+        chrome.tabs.update(existingDashboardTab.id, { active: true }, () => {
+          // Also switch to the window containing this tab
+          if (existingDashboardTab.windowId) {
+            chrome.windows.update(existingDashboardTab.windowId, { focused: true });
+          }
+        });
+      } else {
+        // Dashboard is not open - create a new tab
+        chrome.tabs.create({ url: dashboardUrl });
+      }
+    });
+  }
 
   /**
    * Loads the total number of collected gems from storage.
