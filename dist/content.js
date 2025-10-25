@@ -4,9 +4,9 @@ if (typeof window.feedMeJdInjected === "undefined") {
   class PetUIManager {
     petContainer;
     petImage;
-    feedButton;
     jdElement = null;
     observer;
+    timeoutId;
     currentJobId = null;
     // Track the current job's unique ID
     constructor() {
@@ -16,21 +16,22 @@ if (typeof window.feedMeJdInjected === "undefined") {
     }
     /**
      * Creates the pet's UI elements and injects them into the page.
+     * New elegant design: edge-peeking cat head with tooltip.
      */
     createUI() {
       this.petContainer = document.createElement("div");
       this.petContainer.id = "feedmejd-pet-container";
       this.petImage = document.createElement("img");
       this.petImage.id = "feedmejd-pet-img";
-      this.petImage.title = "Hello! I am FeedMeJD!";
-      this.feedButton = document.createElement("button");
-      this.feedButton.id = "feedmejd-feed-button";
-      this.feedButton.innerText = "Feed Me JD!";
+      this.petImage.title = "Click me to analyze this job!";
+      const tooltip = document.createElement("div");
+      tooltip.className = "feedmejd-tooltip";
+      tooltip.textContent = "Feed Me JD!";
+      this.petContainer.appendChild(tooltip);
       this.petContainer.appendChild(this.petImage);
-      this.petContainer.appendChild(this.feedButton);
       document.body.appendChild(this.petContainer);
-      this.feedButton.addEventListener("click", this.handleFeedClick.bind(this));
-      console.log("FeedMeJD: Pet UI injected.");
+      this.petContainer.addEventListener("click", this.handleFeedClick.bind(this));
+      console.log("FeedMeJD: Pet UI injected (edge-peeking design).");
     }
     /**
      * The main logic that runs on page load and on subsequent navigations.
@@ -63,9 +64,10 @@ if (typeof window.feedMeJdInjected === "undefined") {
      */
     setupObserver() {
       this.observer = new MutationObserver((mutations) => {
-        let timeoutId;
-        clearTimeout(timeoutId);
-        timeoutId = window.setTimeout(() => {
+        if (this.timeoutId) {
+          clearTimeout(this.timeoutId);
+        }
+        this.timeoutId = window.setTimeout(() => {
           this.runLogic();
         }, 500);
       });
@@ -96,6 +98,7 @@ if (typeof window.feedMeJdInjected === "undefined") {
     /**
      * Checks for a JD and sets the initial pet state.
      * Also checks if this job has already been analyzed.
+     * New design: No separate button, click on cat head directly.
      */
     async updateStateBasedOnJD() {
       this.jdElement = document.querySelector(".jobs-description__content .jobs-box__html-content, .jobs-description-content__text");
@@ -103,24 +106,25 @@ if (typeof window.feedMeJdInjected === "undefined") {
         const isAnalyzed = await this.isJobAnalyzed(this.currentJobId);
         if (isAnalyzed) {
           this.setState("done");
-          this.petImage.title = "I've already analyzed this job! Check the dashboard to see the results.";
-          this.feedButton.style.display = "none";
+          this.petImage.title = "Already analyzed! Check dashboard.";
+          this.petContainer.style.pointerEvents = "none";
+          this.petContainer.style.opacity = "0.6";
         } else {
           this.setState("hungry");
-          this.feedButton.style.display = "block";
-          this.feedButton.disabled = false;
-          this.feedButton.title = "Feed me this JD!";
+          this.petImage.title = "Click me to analyze this job!";
+          this.petContainer.style.pointerEvents = "auto";
+          this.petContainer.style.opacity = "1";
         }
       } else if (this.jdElement && !this.currentJobId) {
         this.setState("hungry");
-        this.feedButton.style.display = "block";
-        this.feedButton.disabled = false;
-        this.feedButton.title = "Feed me this JD!";
+        this.petImage.title = "Click me to analyze this job!";
+        this.petContainer.style.pointerEvents = "auto";
+        this.petContainer.style.opacity = "1";
       } else {
         this.setState("idle");
-        this.feedButton.style.display = "block";
-        this.feedButton.disabled = true;
-        this.feedButton.title = "Navigate to a specific job posting to feed me!";
+        this.petImage.title = "Navigate to a job posting!";
+        this.petContainer.style.pointerEvents = "none";
+        this.petContainer.style.opacity = "0.4";
       }
     }
     /**
@@ -137,19 +141,20 @@ if (typeof window.feedMeJdInjected === "undefined") {
       });
     }
     /**
-     * Handles the click event on the feed button.
+     * Handles the click event on the pet container (cat head).
+     * New design: Direct click on cat head, no separate button.
      */
     handleFeedClick() {
       this.jdElement = document.querySelector(".jobs-description__content .jobs-box__html-content, .jobs-description-content__text");
       if (!this.jdElement) {
-        console.warn("FeedMeJD: Feed button clicked, but no JD description found on the page.");
+        console.warn("FeedMeJD: Cat clicked, but no JD description found on the page.");
         this.petImage.title = "I can't find a job description on this page!";
         return;
       }
-      console.log("FeedMeJD: Feed button clicked!");
+      console.log("FeedMeJD: Cat head clicked! Starting analysis...");
       this.setState("eating");
-      this.feedButton.style.display = "none";
       this.petImage.title = "Analyzing... This may take a while if the AI model needs to download!";
+      this.petContainer.style.pointerEvents = "none";
       const jdText = this.jdElement.innerText;
       console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters). Sending to background...`);
       chrome.runtime.sendMessage({ type: "ANALYZE_JD", text: jdText }, (response) => {
@@ -165,7 +170,7 @@ if (typeof window.feedMeJdInjected === "undefined") {
             this.petImage.title = "Oops! Something went wrong.";
           }
           this.setState("idle");
-          this.feedButton.style.display = "block";
+          this.petContainer.style.pointerEvents = "auto";
           return;
         }
         if (response && response.success) {
@@ -175,7 +180,7 @@ if (typeof window.feedMeJdInjected === "undefined") {
           console.error("FeedMeJD: Analysis failed.", response?.error);
           this.petImage.title = "Sorry! The analysis failed. Please try again.";
           this.setState("idle");
-          this.feedButton.style.display = "block";
+          this.petContainer.style.pointerEvents = "auto";
         }
       });
     }
@@ -190,7 +195,8 @@ if (typeof window.feedMeJdInjected === "undefined") {
       console.log("FeedMeJD: Switching to 'done' state...");
       this.setState("done");
       this.petImage.title = "Analysis complete! I've saved this JD as a skill gem.";
-      this.feedButton.style.display = "none";
+      this.petContainer.style.pointerEvents = "none";
+      this.petContainer.style.opacity = "0.6";
     }
     /**
      * Marks a job as analyzed by saving its ID to storage.

@@ -1,36 +1,71 @@
-/* styles.css -> content.css */
-/* We rename this file to make its purpose clearer in the build output. */
+/* FeedMeJD - Edge-peeking elegant design */
 body {
   position: relative;
 }
 
 #feedmejd-pet-container {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  top: 50%;
+  right: -80px; /* Hidden by default, only left edge visible (adjusted for larger cat) */
+  transform: translateY(-50%);
   z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  
-  /* Elegant default state: semi-transparent and slightly smaller */
-  opacity: 0.5;
-  transform: scale(0.85);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
-/* Fully visible and full size on hover */
+/* Slide in on hover */
 #feedmejd-pet-container:hover {
+  right: 0;
+}
+
+/* Tooltip container */
+.feedmejd-tooltip {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(10px);
+  margin-right: 12px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Tooltip arrow */
+.feedmejd-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid #764ba2;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+}
+
+/* Show tooltip on hover */
+#feedmejd-pet-container:hover .feedmejd-tooltip {
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(-50%) translateX(0);
 }
 
 #feedmejd-pet-img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover; /* Ensures all images fill the container without distortion */
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
   cursor: pointer;
+  background: transparent;
+  mix-blend-mode: normal;
+  transition: transform 0.2s ease-in-out;
 }
 
 /* Eating animation - a gentle pulse that suggests digesting/processing */
@@ -56,19 +91,4 @@ body {
   transition: transform 0.2s ease-in-out;
 }
 
-#feedmejd-feed-button {
-  display: none; /* Initially hidden */
-  padding: 8px 16px;
-  border: none;
-  background-color: #ff6f61;
-  color: white;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: bold;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  transition: background-color 0.2s;
-}
-
-#feedmejd-feed-button:hover {
-  background-color: #e65a50;
-}
+/* Button is now deprecated - click on cat head directly */
