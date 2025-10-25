@@ -6,23 +6,54 @@ body {
 
 #feedmejd-pet-container {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 24px;
+  right: 24px;
   z-index: 9999;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  
+  /* Elegant default state: semi-transparent and slightly smaller */
+  opacity: 0.5;
+  transform: scale(0.85);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Fully visible and full size on hover */
+#feedmejd-pet-container:hover {
+  opacity: 1;
+  transform: scale(1);
 }
 
 #feedmejd-pet-img {
   width: 100px;
   height: 100px;
-  transition: transform 0.2s ease-in-out;
+  object-fit: cover; /* Ensures all images fill the container without distortion */
+  cursor: pointer;
 }
 
-#feedmejd-pet-img:hover {
+/* Eating animation - a gentle pulse that suggests digesting/processing */
+@keyframes eating-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.08);
+    opacity: 0.9;
+  }
+}
+
+/* Apply animation to the pet image when in eating state */
+#feedmejd-pet-img.is-eating {
+  animation: eating-pulse 1.2s ease-in-out infinite;
+}
+
+/* Hover effect - only when NOT eating */
+#feedmejd-pet-img:not(.is-eating):hover {
   transform: scale(1.1);
+  transition: transform 0.2s ease-in-out;
 }
 
 #feedmejd-feed-button {

@@ -83,11 +83,15 @@ if (typeof window.feedMeJdInjected === "undefined") {
         idle: { img: "pet-idle.png", title: "Hello! I am FeedMeJD!" },
         hungry: { img: "pet-hungry.png", title: "I am hungry for this JD!" },
         eating: { img: "pet-eating.png", title: "Om nom nom... digesting!" },
-        done: { img: "pet-done.png", title: "I've produced a Skill Gem!" },
-        "feel-good": { img: "pet-feel-good.png", title: "That was yummy!" }
+        done: { img: "pet-done.png", title: "I've produced a Skill Gem!" }
       };
       this.petImage.src = chrome.runtime.getURL(`images/${stateDetails[state].img}`);
       this.petImage.title = stateDetails[state].title;
+      if (state === "eating") {
+        this.petImage.classList.add("is-eating");
+      } else {
+        this.petImage.classList.remove("is-eating");
+      }
     }
     /**
      * Checks for a JD and sets the initial pet state.
