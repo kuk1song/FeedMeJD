@@ -15,7 +15,11 @@ if (typeof window.feedMeJdInjected === "undefined") {
     constructor() {
       this.createUI();
       this.setupObserver();
-      this.runLogic();
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => this.runLogic());
+      } else {
+        setTimeout(() => this.runLogic(), 100);
+      }
     }
     /**
      * Creates the pet's UI elements and injects them into the page.
@@ -26,7 +30,8 @@ if (typeof window.feedMeJdInjected === "undefined") {
       this.petContainer.id = "feedmejd-pet-container";
       this.petImage = document.createElement("img");
       this.petImage.id = "feedmejd-pet-img";
-      this.petImage.title = "Click me to analyze this job!";
+      this.petImage.src = chrome.runtime.getURL("images/pet-idle.png");
+      this.petImage.title = "Hello! I am FeedMeJD!";
       this.tooltip = document.createElement("div");
       this.tooltip.className = "feedmejd-tooltip";
       this.tooltip.textContent = "Feed Me JD!";
@@ -64,6 +69,7 @@ if (typeof window.feedMeJdInjected === "undefined") {
     }
     /**
      * Sets up a MutationObserver to watch for SPA navigations.
+     * Uses a more conservative debounce (800ms) to reduce performance impact.
      */
     setupObserver() {
       this.observer = new MutationObserver((mutations) => {
@@ -72,7 +78,7 @@ if (typeof window.feedMeJdInjected === "undefined") {
         }
         this.timeoutId = window.setTimeout(() => {
           this.runLogic();
-        }, 500);
+        }, 800);
       });
       this.observer.observe(document.body, {
         childList: true,
@@ -114,28 +120,34 @@ if (typeof window.feedMeJdInjected === "undefined") {
         console.log("FeedMeJD: Skipping state update - analysis in progress");
         return;
       }
-      this.jdElement = document.querySelector(".jobs-description__content .jobs-box__html-content, .jobs-description-content__text");
-      this.petContainer.classList.remove("disabled", "analyzing", "completed");
-      if (this.jdElement && this.currentJobId) {
-        const isAnalyzed = await this.isJobAnalyzed(this.currentJobId);
-        if (isAnalyzed) {
-          this.setState("done");
-          this.petImage.title = "Click to view analysis in dashboard";
-          this.tooltip.textContent = "View Dashboard";
-          this.petContainer.classList.add("completed");
-        } else {
+      try {
+        this.jdElement = document.querySelector(".jobs-description__content .jobs-box__html-content, .jobs-description-content__text");
+        this.petContainer.classList.remove("disabled", "analyzing", "completed");
+        if (this.jdElement && this.currentJobId) {
+          const isAnalyzed = await this.isJobAnalyzed(this.currentJobId);
+          if (isAnalyzed) {
+            this.setState("done");
+            this.petImage.title = "Click to view analysis in dashboard";
+            this.tooltip.textContent = "View Dashboard";
+            this.petContainer.classList.add("completed");
+          } else {
+            this.setState("hungry");
+            this.petImage.title = "Click me to analyze this job!";
+            this.tooltip.textContent = "Feed Me JD!";
+          }
+        } else if (this.jdElement && !this.currentJobId) {
           this.setState("hungry");
           this.petImage.title = "Click me to analyze this job!";
           this.tooltip.textContent = "Feed Me JD!";
+        } else {
+          this.setState("idle");
+          this.petImage.title = "Navigate to a job posting!";
+          this.tooltip.textContent = "Find a job first!";
+          this.petContainer.classList.add("disabled");
         }
-      } else if (this.jdElement && !this.currentJobId) {
-        this.setState("hungry");
-        this.petImage.title = "Click me to analyze this job!";
-        this.tooltip.textContent = "Feed Me JD!";
-      } else {
+      } catch (error) {
+        console.error("FeedMeJD: Error in updateStateBasedOnJD:", error);
         this.setState("idle");
-        this.petImage.title = "Navigate to a job posting!";
-        this.tooltip.textContent = "Find a job first!";
         this.petContainer.classList.add("disabled");
       }
     }
@@ -158,10 +170,20 @@ if (typeof window.feedMeJdInjected === "undefined") {
      */
     async isJobAnalyzed(jobId) {
       return new Promise((resolve) => {
-        chrome.storage.local.get(["analyzedJobs"], (result) => {
-          const analyzedJobs = result.analyzedJobs || [];
-          resolve(analyzedJobs.includes(jobId));
-        });
+        try {
+          chrome.storage.local.get(["analyzedJobs"], (result) => {
+            if (chrome.runtime.lastError) {
+              console.warn("FeedMeJD: Could not check job analysis status:", chrome.runtime.lastError.message);
+              resolve(false);
+              return;
+            }
+            const analyzedJobs = result.analyzedJobs || [];
+            resolve(analyzedJobs.includes(jobId));
+          });
+        } catch (error) {
+          console.warn("FeedMeJD: Exception in isJobAnalyzed:", error);
+          resolve(false);
+        }
       });
     }
     /**

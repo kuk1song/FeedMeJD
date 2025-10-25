@@ -29,7 +29,13 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     constructor() {
       this.createUI();
       this.setupObserver();
-      this.runLogic(); // Initial run
+      // Wait for DOM to be fully ready before running initial logic
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => this.runLogic());
+      } else {
+        // DOM is already loaded, run with a small delay to ensure stability
+        setTimeout(() => this.runLogic(), 100);
+      }
     }
 
     /**
@@ -40,10 +46,11 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       this.petContainer = document.createElement('div');
       this.petContainer.id = 'feedmejd-pet-container';
 
-      // Cat head image
+      // Cat head image with initial idle state
       this.petImage = document.createElement('img');
       this.petImage.id = 'feedmejd-pet-img';
-      this.petImage.title = 'Click me to analyze this job!';
+      this.petImage.src = chrome.runtime.getURL('images/pet-idle.png'); // Set initial image immediately
+      this.petImage.title = 'Hello! I am FeedMeJD!';
 
       // Tooltip
       this.tooltip = document.createElement('div');
@@ -96,10 +103,11 @@ if (typeof window.feedMeJdInjected === 'undefined') {
 
     /**
      * Sets up a MutationObserver to watch for SPA navigations.
+     * Uses a more conservative debounce (800ms) to reduce performance impact.
      */
     private setupObserver(): void {
      this.observer = new MutationObserver((mutations) => {
-       // A simple debounce to avoid firing too often on complex DOM changes.
+       // More conservative debounce to reduce performance impact on complex pages
        if (this.timeoutId) {
          clearTimeout(this.timeoutId);
        }
@@ -107,7 +115,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
          // We're looking for major changes, like the job description appearing or disappearing.
          // A simple re-run of the logic is often sufficient for SPAs.
          this.runLogic();
-       }, 500);
+       }, 800); // Increased from 500ms to 800ms for better stability
      });
 
      this.observer.observe(document.body, {
@@ -160,41 +168,48 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         return;
       }
       
-      this.jdElement = document.querySelector('.jobs-description__content .jobs-box__html-content, .jobs-description-content__text');
-      
-      // Remove all state classes first
-      this.petContainer.classList.remove('disabled', 'analyzing', 'completed');
-      
-      if (this.jdElement && this.currentJobId) {
-        // Check if this job has already been analyzed
-        const isAnalyzed = await this.isJobAnalyzed(this.currentJobId);
+      try {
+        this.jdElement = document.querySelector('.jobs-description__content .jobs-box__html-content, .jobs-description-content__text');
         
-        if (isAnalyzed) {
-          // This job was already analyzed - show "done" state (done image has gem)
-          this.setState('done');
-          this.petImage.title = "Click to view analysis in dashboard";
-          this.tooltip.textContent = "View Dashboard";
-          this.petContainer.classList.add('completed');
-          // No badge needed - the done image already has a gem
-        } else {
-          // This is a new job - show "hungry" state
+        // Remove all state classes first
+        this.petContainer.classList.remove('disabled', 'analyzing', 'completed');
+        
+        if (this.jdElement && this.currentJobId) {
+          // Check if this job has already been analyzed
+          const isAnalyzed = await this.isJobAnalyzed(this.currentJobId);
+          
+          if (isAnalyzed) {
+            // This job was already analyzed - show "done" state (done image has gem)
+            this.setState('done');
+            this.petImage.title = "Click to view analysis in dashboard";
+            this.tooltip.textContent = "View Dashboard";
+            this.petContainer.classList.add('completed');
+            // No badge needed - the done image already has a gem
+          } else {
+            // This is a new job - show "hungry" state
+            this.setState('hungry');
+            this.petImage.title = 'Click me to analyze this job!';
+            this.tooltip.textContent = "Feed Me JD!";
+          }
+        } else if (this.jdElement && !this.currentJobId) {
+          // JD exists but we couldn't extract a job ID - still allow feeding
           this.setState('hungry');
           this.petImage.title = 'Click me to analyze this job!';
           this.tooltip.textContent = "Feed Me JD!";
+        } else {
+          // No JD found on this page
+          this.setState('idle');
+          this.petImage.title = 'Navigate to a job posting!';
+          this.tooltip.textContent = "Find a job first!";
+          this.petContainer.classList.add('disabled');
         }
-      } else if (this.jdElement && !this.currentJobId) {
-        // JD exists but we couldn't extract a job ID - still allow feeding
-        this.setState('hungry');
-        this.petImage.title = 'Click me to analyze this job!';
-        this.tooltip.textContent = "Feed Me JD!";
-  } else {
-        // No JD found on this page
+      } catch (error) {
+        console.error("FeedMeJD: Error in updateStateBasedOnJD:", error);
+        // Fallback to idle state on error
         this.setState('idle');
-        this.petImage.title = 'Navigate to a job posting!';
-        this.tooltip.textContent = "Find a job first!";
         this.petContainer.classList.add('disabled');
-  }
-}
+      }
+    }
 
 /**
      * Shows a celebration gem badge animation, then removes it.
@@ -218,10 +233,20 @@ if (typeof window.feedMeJdInjected === 'undefined') {
      */
     private async isJobAnalyzed(jobId: string): Promise<boolean> {
       return new Promise((resolve) => {
-        chrome.storage.local.get(['analyzedJobs'], (result) => {
-          const analyzedJobs: string[] = result.analyzedJobs || [];
-          resolve(analyzedJobs.includes(jobId));
-        });
+        try {
+          chrome.storage.local.get(['analyzedJobs'], (result) => {
+            if (chrome.runtime.lastError) {
+              console.warn("FeedMeJD: Could not check job analysis status:", chrome.runtime.lastError.message);
+              resolve(false);
+              return;
+            }
+            const analyzedJobs: string[] = result.analyzedJobs || [];
+            resolve(analyzedJobs.includes(jobId));
+          });
+        } catch (error) {
+          console.warn("FeedMeJD: Exception in isJobAnalyzed:", error);
+          resolve(false);
+        }
       });
     }
 
