@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Pet House - FeedMeJD</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: white;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .subtitle {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    /* Skill Crystal - The Main Attraction */
+    .crystal-section {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      padding: 48px;
+      margin-bottom: 48px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    .crystal-section h2 {
+      color: #667eea;
+      font-size: 32px;
+      margin-bottom: 24px;
+    }
+
+    #skill-crystal {
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      color: #999;
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state p {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    /* Gem Cards */
+    .gems-section h2 {
+      font-size: 28px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .gems-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .gem-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease;
+    }
+
+    .gem-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .gem-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .gem-icon {
+      width: 32px;
+      height: 32px;
+      margin-right: 12px;
+    }
+
+    .gem-title {
+      font-size: 14px;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .gem-summary {
+      color: #333;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .skills-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .skill-category h4 {
+      font-size: 12px;
+      color: #667eea;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .skill-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .skill-tag {
+      background: #f0f0f0;
+      color: #555;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏠 My Pet House</h1>
+      <p class="subtitle">Your collected skill gems and insights</p>
+    </header>
+
+    <!-- The Main Skill Crystal -->
+    <section class="crystal-section">
+      <h2>✨ Skill Crystal</h2>
+      <div id="skill-crystal">
+        <div class="empty-state">
+          <div class="empty-state-icon">💎</div>
+          <p>No gems collected yet</p>
+          <p style="font-size: 14px; color: #bbb;">Feed your pet some job descriptions to start!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Individual Gem Cards -->
+    <section class="gems-section">
+      <h2>💎 Your Skill Gems</h2>
+      <div id="gems-grid" class="gems-grid"></div>
+    </section>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
+
