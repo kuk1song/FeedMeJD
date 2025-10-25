@@ -6,69 +6,55 @@ Accepted
 
 ## Context
 
-After establishing the core functionality of the extension, the initial UI design presented several user experience issues:
-
-1.  **Visual Clutter**: The pet UI appeared as a semi-transparent, floating element with a separate "Feed Me JD!" button. This created a cluttered appearance and was not visually elegant.
-2.  **Always Visible**: The UI was always fully visible (albeit semi-transparent), which could be distracting when users were reading job descriptions.
-3.  **Redundant Interaction**: Having a separate button for interaction added unnecessary UI complexity. The user had to locate and click a button, rather than interacting directly with the pet.
-4.  **Lack of Discoverability**: The semi-transparent default state made it less noticeable, yet it still took up significant screen real estate.
-
-A more elegant, minimalist, and delightful interaction pattern was needed that aligned with our product principle of "zero learning cost."
+The initial UI design for the AI pet was a fixed bottom-right icon, which was functional but lacked elegance and could conflict with other browser extensions. The user requested a more refined, less intrusive design, specifically:
+- A smaller, complete, and exquisite circular cat head.
+- A position that is less likely to conflict with other floating elements.
+- A clear visual indication of its state (e.g., "Feed Me JD!" on hover).
+- A smooth transition and animation.
+- A recurring bug where the pet's state would flicker or show overlapping images during state transitions, particularly when loading a page with an already-analyzed job.
+- The eating animation was not as dynamic as a previous "size-changing" version.
 
 ## Decision
 
-We implemented a **edge-peeking design** with direct interaction on the pet, inspired by minimalist UX patterns found in modern applications.
+We implemented a compact, circular, edge-peeking UI design with enhanced state management and visual feedback to address these issues.
 
-### Key Changes
+1.  **Compact Circular Design**:
+    - The pet container was changed to `56px` width/height with `border-radius: 50%` for a perfect circle.
+    - The cat image inside was set to `48px` to fit elegantly within the container.
+    - `right: 8px` was chosen to place it closer to the screen edge, making it less intrusive.
+    - `top: 33%` was selected as a "safe zone" to avoid common conflict areas (bottom-right, top-right).
 
-1.  **Edge-Peeking Positioning**:
-    *   The pet container is now positioned on the **right edge** of the viewport, **vertically centered** (`top: 50%`).
-    *   By default, the container is **partially hidden** (`right: -80px`), with only the **left edge of the cat's head visible**, peeking into the viewport.
-    *   On **hover**, the container smoothly **slides in** (`right: 0`), revealing the full cat head and a tooltip.
+2.  **Enhanced Visual States and Interactions**:
+    - **Default**: `opacity: 0.7` for a subtle presence.
+    - **Hover**: `opacity: 1` and `transform: scale(1.125)` for a slight enlargement, with a smooth transition. A gradient tooltip "Feed Me JD!" appears.
+    - **"Done" State (Analyzed Job)**:
+        - The pet remains clickable.
+        - A small, animated "gem badge" (`💎`) appears briefly (pop-out, hold, fade-out animation) after analysis, then disappears. This provides a clear, non-persistent visual confirmation.
+        - The tooltip changes to "View Dashboard".
+        - Clicking the pet in this state sends a message to the background script to open/switch to the dashboard.
+    - **"Analyzing" State**:
+        - The container gets an `analyzing` class with a `box-shadow` pulse animation.
+        - The pet image gets an `is-eating` class with a `transform: scale` and `opacity` pulse animation (restored from an earlier version to provide a more "eating" feel).
+        - During analysis, the container's hover effect (`scale`) is temporarily disabled to prevent conflicts with the image's `transform` animation.
+    - **"Disabled" State (No JD found)**: `opacity: 0.4` and `cursor: not-allowed`.
 
-2.  **Direct Interaction**:
-    *   **Removed the separate "Feed Me JD!" button entirely.** The button was redundant and added visual noise.
-    *   The **entire pet container is now clickable.** Users click directly on the cat's head to trigger the analysis.
-    *   This reduces the interaction to a single, intuitive action: "Click the cat."
-
-3.  **Elegant Tooltip**:
-    *   A **tooltip** now appears to the left of the cat's head on hover.
-    *   The tooltip has a **gradient background** (`#667eea` to `#764ba2`) with a **triangular arrow** pointing to the cat, creating a polished, professional appearance.
-    *   The tooltip displays "Feed Me JD!" and uses a **slide-in animation** (`translateX`) for smooth appearance.
-
-4.  **Increased Size for Visibility**:
-    *   The cat head image size was increased from `100px` to `120px` to improve visibility and clickability.
-    *   The hidden position was adjusted from `-60px` to `-80px` to maintain the "peeking" effect with the larger size.
-
-5.  **Code Cleanup**:
-    *   Removed the `feedButton` property from the `PetUIManager` class entirely, as it is no longer needed.
-    *   Removed all logic related to button visibility and state management.
-    *   Simplified the `handleFeedClick` method to work with container clicks instead of button clicks.
+3.  **Refined State Management**:
+    - **Image Preloading**: To fix the flickering/overlapping image bug, the `setState` function was refactored. It now uses a JavaScript `Image` object to preload the next state's image in the background. The `petImage.src` is only updated in the `onload` callback of the preloader, ensuring the new image is fully loaded before being displayed.
+    - **Robust Error Handling**: To handle the frequent "Extension context invalidated" errors during development reloads, `try...catch` blocks were added around `chrome.storage.local.get` and a `chrome.runtime.lastError` check was added to the `chrome.runtime.sendMessage` callback. This prevents console spam and makes the content script more resilient.
+    - **State Change Prevention**: Introduced `private currentState` in `PetUIManager` to prevent redundant `setState` calls, which was causing `is-eating` class to be repeatedly removed.
+    - **Analysis Lock**: Added `private isAnalyzing` flag to prevent `MutationObserver` from resetting the UI state during an active analysis.
 
 ## Consequences
 
 **Positive:**
-
-*   **Significantly Improved User Experience**: The edge-peeking design is elegant, minimalist, and delightful. It does not obstruct the user's view of the page content while still being easily discoverable.
-*   **Reduced Visual Clutter**: The UI now takes up minimal space and only fully reveals itself when the user needs it.
-*   **More Intuitive Interaction**: Clicking directly on the pet is more natural and requires less cognitive effort than locating a separate button.
-*   **Professional Aesthetic**: The gradient tooltip with a smooth slide-in animation elevates the overall polish and quality of the extension.
-*   **Simplified Codebase**: Removing the button and its associated logic reduced code complexity and potential bugs.
-*   **Better Discoverability**: The subtle peeking edge naturally draws the user's eye and invites interaction.
+- **Significantly Improved UX**: The plugin is now elegant, non-intrusive, and provides clear, delightful feedback. The image flickering bug is resolved.
+- **Reduced Conflicts**: The new position and compact size minimize interference with other page elements.
+- **Intuitive Interaction**: Users get immediate visual confirmation and a clear path to the dashboard for analyzed jobs.
+- **Robust State Handling**: The preloading and error handling make the UI transitions seamless and the script more stable, especially during development.
+- **Performance**: CSS animations are GPU-accelerated, and redundant JS operations are minimized.
 
 **Negative:**
-
-*   **Slight Increase in CSS Complexity**: The tooltip arrow and the edge-peeking animations added a small amount of CSS code. However, this is a worthwhile trade-off for the significantly improved UX.
-*   **Potential for Discoverability Issues on Some Layouts**: If a website has a very busy right edge, the peeking cat might be less noticeable. However, our testing on LinkedIn shows this is not an issue in practice.
-
-## Related Decisions
-
-*   **ADR-003**: Programmatic Injection - This decision laid the foundation for precise UI control.
-*   **ADR-004**: Full UI Lifecycle Management - This decision ensured the pet UI appears and disappears at the right moments, which is crucial for the edge-peeking design to work effectively across SPA navigations.
-
-## Lessons Learned
-
-*   **Minimalism is Powerful**: Removing the button and simplifying the interaction made the extension feel more polished and professional.
-*   **Edge-Peeking is a Great Pattern**: For browser extensions that need to be present but not intrusive, the edge-peeking pattern (inspired by chat widgets and assistant tools) is highly effective.
-*   **Direct Manipulation is Intuitive**: Allowing users to click directly on the visual element (the cat) rather than a separate control reduces cognitive load and feels more natural.
+- **Increased CSS Complexity**: More intricate CSS for animations and state transitions.
+- **Slightly More Complex JS**: The image preloading logic adds a few more lines of code to the `setState` function, but the reliability gain is a worthwhile trade-off.
+- **Debugging Challenges**: Identifying CSS `transform` conflicts and `MutationObserver` interaction required careful debugging.
 
