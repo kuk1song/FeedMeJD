@@ -3,8 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Pet House - FeedMeJD</title>
+  <title>Gem Atelier - FeedMeJD</title>
   <style>
+    :root {
+      --bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #eef2f7;
+      --card: #ffffff;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      --shadow-hover: 0 12px 32px rgba(15, 23, 42, 0.1);
+      --ring: 0 0 0 4px rgba(108, 99, 255, 0.12);
+      
+      --brand: #0f172a;
+      --accent: #6c63ff;
+      --accent-soft: #ffae6b;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -12,11 +27,12 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      padding: 40px 20px;
-      color: white;
+      padding: 48px 20px;
+      line-height: 1.6;
     }
 
     .container {
@@ -25,124 +41,259 @@
     }
 
     header {
-      text-align: center;
-      margin-bottom: 48px;
+      margin-bottom: 40px;
+      position: relative;
     }
 
-    h1 {
-      font-size: 48px;
+    .signature {
+      position: absolute;
+      top: -12px;
+      left: 4px;
+      font-size: 22px;
+      line-height: 1;
+      color: var(--muted);
+      font-family: 'Segoe Script', 'Apple Chancery', cursive;
+      transform: rotate(-1.5deg);
+      opacity: 0.85;
+      letter-spacing: 0.3px;
+      user-select: none;
+      pointer-events: none;
+      font-weight: 400;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-top: 24px;
+    }
+
+    .brand-cat {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      object-fit: contain;
+      background: #fff;
+      padding: 4px;
+    }
+
+    .brand-title {
+      font-size: 32px;
       font-weight: 700;
-      margin-bottom: 8px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      color: var(--brand);
+      letter-spacing: 0.2px;
     }
 
-    .subtitle {
-      font-size: 18px;
-      opacity: 0.9;
+    .brand-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 400;
     }
 
     /* Skill Crystal - The Main Attraction */
     .crystal-section {
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 24px;
-      padding: 48px;
-      margin-bottom: 48px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 36px 40px;
+      margin-bottom: 40px;
+      box-shadow: var(--shadow);
       text-align: center;
+      position: relative;
+      transition: box-shadow 0.3s ease;
     }
 
-    .crystal-section h2 {
-      color: #667eea;
-      font-size: 32px;
+    .crystal-section:hover {
+      box-shadow: var(--shadow-hover);
+    }
+
+    .crystal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 24px;
     }
 
+    .crystal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--brand);
+      letter-spacing: 0.3px;
+      text-align: left;
+    }
+
+    .view-switcher {
+      display: inline-flex;
+      gap: 6px;
+      background: #fafbff;
+      border: 1px solid var(--border);
+      padding: 4px;
+      border-radius: 999px;
+    }
+
+    .view-switcher button {
+      background: transparent;
+      border: none;
+      padding: 6px 14px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+    }
+
+    .view-switcher button:hover {
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .view-switcher button.active {
+      background: #fff;
+      color: var(--accent);
+      box-shadow: var(--shadow);
+    }
+
     #skill-crystal {
-      min-height: 400px;
+      min-height: 380px;
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
+      position: relative;
     }
 
     .empty-state {
       text-align: center;
       padding: 60px;
-      color: #999;
+      color: var(--muted);
     }
 
     .empty-state-icon {
-      font-size: 64px;
+      font-size: 56px;
       margin-bottom: 16px;
+      opacity: 0.6;
     }
 
     .empty-state p {
-      font-size: 18px;
-      margin-bottom: 8px;
+      font-size: 16px;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .empty-state p:last-child {
+      font-size: 13px;
+      color: var(--muted);
     }
 
     /* Gem Cards */
     .gems-section h2 {
-      font-size: 28px;
-      margin-bottom: 24px;
-      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--brand);
+      text-align: left;
+      margin: 8px 0 16px;
+      letter-spacing: 0.3px;
     }
 
     .gems-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 24px;
+      gap: 16px;
     }
 
     .gem-card {
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-      transition: transform 0.2s ease;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
     }
 
     .gem-card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .gem-card.is-deleting {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+
+    .delete-gem-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 26px;
+      height: 26px;
+      background: #f6f7fb;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      color: #b91c1c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.2s ease;
+    }
+
+    .gem-card:hover .delete-gem-btn {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .delete-gem-btn:hover {
+      background: #fee;
+      border-color: #fcc;
     }
 
     .gem-header {
       display: flex;
       align-items: center;
-      margin-bottom: 16px;
+      gap: 10px;
+      margin-bottom: 12px;
     }
 
     .gem-icon {
-      width: 32px;
-      height: 32px;
-      margin-right: 12px;
+      width: 20px;
+      height: 20px;
     }
 
     .gem-title {
-      font-size: 14px;
-      color: #667eea;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.4px;
       font-weight: 600;
     }
 
     .gem-summary {
-      color: #333;
-      font-size: 14px;
-      line-height: 1.6;
-      margin-bottom: 16px;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.65;
+      margin: 12px 0 14px;
     }
 
     .skills-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 12px;
     }
 
     .skill-category h4 {
-      font-size: 12px;
-      color: #667eea;
-      font-weight: 600;
-      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      margin-bottom: 8px;
     }
 
     .skill-tags {
@@ -152,37 +303,212 @@
     }
 
     .skill-tag {
-      background: #f0f0f0;
-      color: #555;
+      background: #f6f7fb;
+      border: 1px solid var(--border);
+      color: #334155;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Constellation View Specific Styles */
+    .constellation-view {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.5s ease;
+    }
+
+    .constellation-skill-tag {
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 20px;
+      transition: all 0.2s ease;
+      cursor: default;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border: 1px solid;
+    }
+
+    .constellation-skill-tag:hover {
+      transform: scale(1.08);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      z-index: 1;
+    }
+
+    .constellation-skill-tag .count-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-5px);
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      font-weight: 600;
+    }
+
+    .constellation-skill-tag:hover .count-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-8px);
+    }
+
+    /* Prism View Specific Styles */
+    .prism-view {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      width: 100%;
+      height: 100%;
+      text-align: left;
+      transition: opacity 0.5s ease;
+      padding: 0 20px;
+    }
+
+    .prism-category {
+      background: rgba(102, 126, 234, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .prism-category h3 {
+      font-size: 18px;
+      color: var(--brand);
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .prism-skill-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-grow: 1;
+    }
+
+    .prism-skill-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .prism-skill-item:hover {
+      transform: translateX(4px);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow);
+    }
+
+    .prism-rank {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #5548d9);
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .prism-skill-name {
+      flex-grow: 1;
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .prism-skill-count {
+      background: var(--accent);
+      color: white;
       padding: 4px 10px;
       border-radius: 12px;
       font-size: 12px;
-      font-weight: 500;
+      font-weight: bold;
+      margin-left: 10px;
+      flex-shrink: 0;
+    }
+
+    .prism-progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .prism-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #5548d9);
+      border-radius: 2px;
+      transition: width 0.5s ease-out;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🏠 My Pet House</h1>
-      <p class="subtitle">Your collected skill gems and insights</p>
+      <div class="signature">Discover your hidden blueprint.</div>
+      <div class="brand-row">
+        <img class="brand-cat" src="images/pet-idle.png" alt="FeedMeJD Cat">
+        <div>
+          <div class="brand-title">Gem Atelier</div>
+          <div class="brand-sub">A curated cabinet of your market-ready skills</div>
+        </div>
+      </div>
     </header>
 
     <!-- The Main Skill Crystal -->
     <section class="crystal-section">
-      <h2>✨ Skill Crystal</h2>
+      <div class="crystal-header">
+        <div class="crystal-title">Skill Crystal</div>
+        <div class="view-switcher">
+          <button id="constellation-view-btn" class="active" title="View skills as a visual constellation">Constellation</button>
+          <button id="prism-view-btn" title="View skills as ranked lists">Prism</button>
+        </div>
+      </div>
       <div id="skill-crystal">
         <div class="empty-state">
           <div class="empty-state-icon">💎</div>
           <p>No gems collected yet</p>
-          <p style="font-size: 14px; color: #bbb;">Feed your pet some job descriptions to start!</p>
+          <p>Feed your pet some job descriptions to start!</p>
         </div>
       </div>
     </section>
 
     <!-- Individual Gem Cards -->
     <section class="gems-section">
-      <h2>💎 Your Skill Gems</h2>
+      <h2>Your Skill Gems</h2>
       <div id="gems-grid" class="gems-grid"></div>
     </section>
   </div>

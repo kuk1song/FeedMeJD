@@ -1,4 +1,4 @@
-// Dashboard logic - Simple, elegant, and functional
+// Dashboard logic - Upgraded with interactive views and delete functionality
 
 interface Gem {
   summary: string;
@@ -8,9 +8,45 @@ interface Gem {
   };
 }
 
+interface SkillData {
+  hard: Map<string, number>;
+  soft: Map<string, number>;
+}
+
+// Current view state
+let currentView: 'constellation' | 'prism' = 'constellation';
+let skillData: SkillData = { hard: new Map(), soft: new Map() };
+
 document.addEventListener('DOMContentLoaded', () => {
   loadAndDisplayGems();
+  setupViewSwitcher();
 });
+
+/**
+ * Sets up the view switcher buttons.
+ */
+function setupViewSwitcher(): void {
+  const constellationBtn = document.getElementById('constellation-view-btn')!;
+  const prismBtn = document.getElementById('prism-view-btn')!;
+
+  constellationBtn.addEventListener('click', () => {
+    if (currentView !== 'constellation') {
+      currentView = 'constellation';
+      constellationBtn.classList.add('active');
+      prismBtn.classList.remove('active');
+      renderCurrentView();
+    }
+  });
+
+  prismBtn.addEventListener('click', () => {
+    if (currentView !== 'prism') {
+      currentView = 'prism';
+      prismBtn.classList.add('active');
+      constellationBtn.classList.remove('active');
+      renderCurrentView();
+    }
+  });
+}
 
 /**
  * Loads all gems from storage and displays them.
@@ -28,9 +64,289 @@ function loadAndDisplayGems(): void {
     // Display individual gem cards
     displayGemCards(gemEntries);
     
-    // Generate and display the skill crystal (aggregated visualization)
-    generateSkillCrystal(gemEntries);
+    // Aggregate skills
+    skillData = aggregateSkills(gemEntries);
+    
+    // Render the current view
+    renderCurrentView();
   });
+}
+
+/**
+ * Aggregates all skills from gems, keeping hard and soft separate.
+ */
+function aggregateSkills(gemEntries: [string, any][]): SkillData {
+  const hard = new Map<string, number>();
+  const soft = new Map<string, number>();
+  
+  gemEntries.forEach(([_, gemData]: [string, Gem]) => {
+    // Count hard skills
+    gemData.skills.hard.forEach(skill => {
+      const normalized = skill.toLowerCase().trim();
+      hard.set(normalized, (hard.get(normalized) || 0) + 1);
+    });
+    
+    // Count soft skills
+    gemData.skills.soft.forEach(skill => {
+      const normalized = skill.toLowerCase().trim();
+      soft.set(normalized, (soft.get(normalized) || 0) + 1);
+    });
+  });
+  
+  return { hard, soft };
+}
+
+/**
+ * Renders the skill crystal based on the current view.
+ */
+function renderCurrentView(): void {
+  if (currentView === 'constellation') {
+    renderConstellationView();
+  } else {
+    renderPrismView();
+  }
+}
+
+/**
+ * Renders the Constellation View - a beautiful, visual skill cloud.
+ */
+function renderConstellationView(): void {
+  const container = document.getElementById('skill-crystal')!;
+  container.innerHTML = '';
+  
+  const cloudContainer = document.createElement('div');
+  cloudContainer.style.cssText = `
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    width: 100%;
+  `;
+  
+  // Combine all skills and sort by frequency
+  const allSkills: [string, number, 'hard' | 'soft'][] = [];
+  skillData.hard.forEach((count, skill) => allSkills.push([skill, count, 'hard']));
+  skillData.soft.forEach((count, skill) => allSkills.push([skill, count, 'soft']));
+  allSkills.sort((a, b) => b[1] - a[1]);
+  
+  // Take top 30 for a clean visual
+  const topSkills = allSkills.slice(0, 30);
+  
+  topSkills.forEach(([skill, count, type]) => {
+    const skillElement = document.createElement('span');
+    
+    // Size based on frequency (min: 14px, max: 32px)
+    const fontSize = Math.min(14 + count * 3, 32);
+    
+    // Color based on type
+    const baseColor = type === 'hard' ? '#667eea' : '#ffa500';
+    const bgColor = type === 'hard' ? 'rgba(102, 126, 234, 0.1)' : 'rgba(255, 165, 0, 0.1)';
+    
+    skillElement.textContent = skill;
+    skillElement.title = `${skill}: Found in ${count} job${count > 1 ? 's' : ''} (${type === 'hard' ? 'Hard Skill' : 'Soft Skill'})`;
+    skillElement.style.cssText = `
+      font-size: ${fontSize}px;
+      font-weight: 600;
+      color: ${baseColor};
+      padding: 8px 16px;
+      background: ${bgColor};
+      border-radius: 20px;
+      transition: all 0.2s ease;
+      cursor: default;
+      user-select: none;
+    `;
+    
+    // Hover effect with count tooltip
+    skillElement.addEventListener('mouseenter', () => {
+      skillElement.style.transform = 'scale(1.1)';
+      skillElement.style.boxShadow = `0 4px 12px ${type === 'hard' ? 'rgba(102, 126, 234, 0.3)' : 'rgba(255, 165, 0, 0.3)'}`;
+    });
+    
+    skillElement.addEventListener('mouseleave', () => {
+      skillElement.style.transform = 'scale(1)';
+      skillElement.style.boxShadow = 'none';
+    });
+    
+    cloudContainer.appendChild(skillElement);
+  });
+  
+  container.appendChild(cloudContainer);
+}
+
+/**
+ * Renders the Prism View - ranked lists of hard and soft skills.
+ */
+function renderPrismView(): void {
+  const container = document.getElementById('skill-crystal')!;
+  container.innerHTML = '';
+  
+  const prismContainer = document.createElement('div');
+  prismContainer.style.cssText = `
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    width: 100%;
+    padding: 20px;
+  `;
+  
+  // Create Hard Skills section
+  const hardSection = createPrismSection(
+    'Hard Skills',
+    Array.from(skillData.hard.entries()).sort((a, b) => b[1] - a[1]).slice(0, 15),
+    '#667eea'
+  );
+  
+  // Create Soft Skills section
+  const softSection = createPrismSection(
+    'Soft Skills',
+    Array.from(skillData.soft.entries()).sort((a, b) => b[1] - a[1]).slice(0, 15),
+    '#ffa500'
+  );
+  
+  prismContainer.appendChild(hardSection);
+  prismContainer.appendChild(softSection);
+  container.appendChild(prismContainer);
+}
+
+/**
+ * Creates a prism section (either hard or soft skills).
+ */
+function createPrismSection(title: string, skills: [string, number][], color: string): HTMLElement {
+  const section = document.createElement('div');
+  
+  const titleEl = document.createElement('h3');
+  titleEl.textContent = title;
+  titleEl.style.cssText = `
+    color: ${color};
+    font-size: 20px;
+    margin-bottom: 16px;
+    text-align: left;
+  `;
+  
+  const skillList = document.createElement('div');
+  skillList.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  `;
+  
+  // Find max count for scaling
+  const maxCount = skills.length > 0 ? skills[0][1] : 1;
+  
+  skills.forEach(([skill, count], index) => {
+    const skillItem = document.createElement('div');
+    const percentage = (count / maxCount) * 100;
+    
+    skillItem.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    `;
+    
+    // Rank badge
+    const rank = document.createElement('span');
+    rank.textContent = `${index + 1}`;
+    rank.style.cssText = `
+      width: 24px;
+      height: 24px;
+      background: ${color};
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    `;
+    
+    // Skill bar container
+    const barContainer = document.createElement('div');
+    barContainer.style.cssText = `
+      flex: 1;
+      position: relative;
+      height: 32px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 16px;
+      overflow: hidden;
+    `;
+    
+    // Skill bar
+    const bar = document.createElement('div');
+    bar.style.cssText = `
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: ${percentage}%;
+      background: linear-gradient(90deg, ${color}, ${color}dd);
+      border-radius: 16px;
+      transition: width 0.5s ease;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+    `;
+    
+    // Skill name
+    const skillName = document.createElement('span');
+    skillName.textContent = skill;
+    skillName.style.cssText = `
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    `;
+    
+    // Count badge
+    const countBadge = document.createElement('span');
+    countBadge.textContent = count.toString();
+    countBadge.style.cssText = `
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: white;
+      color: ${color};
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+    
+    bar.appendChild(skillName);
+    barContainer.appendChild(bar);
+    barContainer.appendChild(countBadge);
+    
+    skillItem.appendChild(rank);
+    skillItem.appendChild(barContainer);
+    
+    // Hover effect
+    skillItem.addEventListener('mouseenter', () => {
+      skillItem.style.background = 'rgba(0,0,0,0.02)';
+      skillItem.style.transform = 'translateX(4px)';
+    });
+    
+    skillItem.addEventListener('mouseleave', () => {
+      skillItem.style.background = 'transparent';
+      skillItem.style.transform = 'translateX(0)';
+    });
+    
+    skillList.appendChild(skillItem);
+  });
+  
+  section.appendChild(titleEl);
+  section.appendChild(skillList);
+  
+  return section;
 }
 
 /**
@@ -47,13 +363,23 @@ function displayGemCards(gemEntries: [string, any][]): void {
 }
 
 /**
- * Creates a single gem card element.
+ * Creates a single gem card element with delete functionality.
  */
 function createGemCard(gemId: string, gem: Gem): HTMLElement {
   const card = document.createElement('div');
   card.className = 'gem-card';
+  card.dataset.gemId = gemId;
   
-  card.innerHTML = `
+  // Delete button
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'delete-gem-btn';
+  deleteBtn.innerHTML = '×';
+  deleteBtn.title = 'Delete this gem';
+  deleteBtn.addEventListener('click', () => deleteGem(gemId, card));
+  
+  // Card content
+  const cardContent = document.createElement('div');
+  cardContent.innerHTML = `
     <div class="gem-header">
       <img src="images/gem.png" alt="Gem" class="gem-icon">
       <span class="gem-title">${gemId}</span>
@@ -72,95 +398,34 @@ function createGemCard(gemId: string, gem: Gem): HTMLElement {
       <div class="skill-category">
         <h4>Soft Skills</h4>
         <div class="skill-tags">
-          ${gem.skills.soft.map(skill => 
+          ${gem.skills.soft.slice(0, 8).map(skill => 
             `<span class="skill-tag">${skill}</span>`
           ).join('')}
+          ${gem.skills.soft.length > 8 ? `<span class="skill-tag">+${gem.skills.soft.length - 8} more</span>` : ''}
         </div>
       </div>
     </div>
   `;
   
+  card.appendChild(deleteBtn);
+  card.appendChild(cardContent);
+  
   return card;
 }
 
 /**
- * Generates the skill crystal - an aggregated view of all skills.
- * This is the core visual showcase of the dashboard.
+ * Deletes a gem from storage and updates the UI.
  */
-function generateSkillCrystal(gemEntries: [string, any][]): void {
-  const skillCrystalContainer = document.getElementById('skill-crystal')!;
+function deleteGem(gemId: string, cardElement: HTMLElement): void {
+  // Add deleting animation
+  cardElement.classList.add('is-deleting');
   
-  // Aggregate all skills and count frequencies
-  const skillFrequency: { [skill: string]: number } = {};
-  
-  gemEntries.forEach(([_, gemData]: [string, Gem]) => {
-    // Count hard skills
-    gemData.skills.hard.forEach(skill => {
-      const normalizedSkill = skill.toLowerCase();
-      skillFrequency[normalizedSkill] = (skillFrequency[normalizedSkill] || 0) + 1;
+  // Wait for animation to complete, then remove from storage
+  setTimeout(() => {
+    chrome.storage.local.remove(gemId, () => {
+      console.log(`FeedMeJD: Deleted gem ${gemId}`);
+      // Reload the entire dashboard to reflect changes
+      loadAndDisplayGems();
     });
-    
-    // Count soft skills
-    gemData.skills.soft.forEach(skill => {
-      const normalizedSkill = skill.toLowerCase();
-      skillFrequency[normalizedSkill] = (skillFrequency[normalizedSkill] || 0) + 1;
-    });
-  });
-  
-  // Sort by frequency and get top skills
-  const sortedSkills = Object.entries(skillFrequency)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 30); // Top 30 skills
-  
-  // Create a simple, elegant skill cloud
-  skillCrystalContainer.innerHTML = '';
-  
-  const cloudContainer = document.createElement('div');
-  cloudContainer.style.cssText = `
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    padding: 20px;
-  `;
-  
-  sortedSkills.forEach(([skill, count]) => {
-    const skillElement = document.createElement('span');
-    
-    // Size based on frequency (min: 14px, max: 32px)
-    const fontSize = Math.min(14 + count * 3, 32);
-    
-    // Opacity based on frequency
-    const opacity = Math.min(0.5 + count * 0.15, 1);
-    
-    skillElement.textContent = skill;
-    skillElement.style.cssText = `
-      font-size: ${fontSize}px;
-      font-weight: 600;
-      color: #667eea;
-      opacity: ${opacity};
-      padding: 8px 16px;
-      background: rgba(102, 126, 234, 0.1);
-      border-radius: 20px;
-      transition: all 0.2s ease;
-      cursor: default;
-    `;
-    
-    // Hover effect
-    skillElement.addEventListener('mouseenter', () => {
-      skillElement.style.transform = 'scale(1.1)';
-      skillElement.style.background = 'rgba(102, 126, 234, 0.2)';
-    });
-    
-    skillElement.addEventListener('mouseleave', () => {
-      skillElement.style.transform = 'scale(1)';
-      skillElement.style.background = 'rgba(102, 126, 234, 0.1)';
-    });
-    
-    cloudContainer.appendChild(skillElement);
-  });
-  
-  skillCrystalContainer.appendChild(cloudContainer);
+  }, 300);
 }
-
