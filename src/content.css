@@ -179,10 +179,11 @@ body {
 }
 
 #feedmejd-pet-container.disabled {
-  opacity: 0.4;
+  /* Removed opacity to keep pet fully visible and friendly */
   cursor: not-allowed;
 }
 
 #feedmejd-pet-container.disabled:hover {
-  transform: translateY(-50%) scale(1); /* No scale on hover when disabled */
+  opacity: 1; /* Stay fully visible on hover */
+  transform: translateY(-50%) scale(1.05); /* Subtle scale to show it's still "alive" */
 }

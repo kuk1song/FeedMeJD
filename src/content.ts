@@ -199,14 +199,16 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         } else {
           // No JD found on this page
           this.setState('idle');
-          this.petImage.title = 'Navigate to a job posting!';
-          this.tooltip.textContent = "Find a job first!";
+          this.petImage.title = 'Click on a job posting to start!';
+          this.tooltip.textContent = "Pick a job you like!";
           this.petContainer.classList.add('disabled');
         }
       } catch (error) {
         console.error("FeedMeJD: Error in updateStateBasedOnJD:", error);
         // Fallback to idle state on error
         this.setState('idle');
+        this.petImage.title = 'Click on a job posting to start!';
+        this.tooltip.textContent = "Pick a job you like!";
         this.petContainer.classList.add('disabled');
       }
     }

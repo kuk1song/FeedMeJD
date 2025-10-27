@@ -141,13 +141,15 @@ if (typeof window.feedMeJdInjected === "undefined") {
           this.tooltip.textContent = "Feed Me JD!";
         } else {
           this.setState("idle");
-          this.petImage.title = "Navigate to a job posting!";
-          this.tooltip.textContent = "Find a job first!";
+          this.petImage.title = "Click on a job posting to start!";
+          this.tooltip.textContent = "Pick a job you like!";
           this.petContainer.classList.add("disabled");
         }
       } catch (error) {
         console.error("FeedMeJD: Error in updateStateBasedOnJD:", error);
         this.setState("idle");
+        this.petImage.title = "Click on a job posting to start!";
+        this.tooltip.textContent = "Pick a job you like!";
         this.petContainer.classList.add("disabled");
       }
     }
