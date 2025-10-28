@@ -56,8 +56,22 @@ function loadAndDisplayGems(): void {
     // Filter out gem data
     const gemEntries = Object.entries(items).filter(([key]) => key.startsWith('gem_'));
     
+    const gemsGrid = document.getElementById('gems-grid');
+    const skillCrystalContainer = document.getElementById('skill-crystal');
+
     if (gemEntries.length === 0) {
-      // No gems - empty state is already shown in HTML
+      // Reset aggregated data and UI to empty state
+      skillData = { hard: new Map(), soft: new Map() };
+      if (gemsGrid) gemsGrid.innerHTML = '';
+      if (skillCrystalContainer) {
+        skillCrystalContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">💎</div>
+            <p>No gems collected yet</p>
+            <p>Feed your pet some job descriptions to start!</p>
+          </div>
+        `;
+      }
       return;
     }
 

@@ -27,7 +27,20 @@ function setupViewSwitcher() {
 function loadAndDisplayGems() {
   chrome.storage.local.get(null, (items) => {
     const gemEntries = Object.entries(items).filter(([key]) => key.startsWith("gem_"));
+    const gemsGrid = document.getElementById("gems-grid");
+    const skillCrystalContainer = document.getElementById("skill-crystal");
     if (gemEntries.length === 0) {
+      skillData = { hard: /* @__PURE__ */ new Map(), soft: /* @__PURE__ */ new Map() };
+      if (gemsGrid) gemsGrid.innerHTML = "";
+      if (skillCrystalContainer) {
+        skillCrystalContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">💎</div>
+            <p>No gems collected yet</p>
+            <p>Feed your pet some job descriptions to start!</p>
+          </div>
+        `;
+      }
       return;
     }
     displayGemCards(gemEntries);
