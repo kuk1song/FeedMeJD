@@ -288,7 +288,11 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         '.jobs-unified-top-card__company-name a',
         '.jobs-unified-top-card__company-name',
         '.topcard__org-name-link',
-        '.top-card-layout__entity-info a'
+        '.top-card-layout__entity-info a',
+        'a[data-test-job-company-name-link]',
+        'a[data-tracking-control-name="public_jobs_topcard-org-name"]',
+        '.top-card-layout__entity-info a[href*="/company/"]',
+        '.jobs-unified-top-card__primary-description a[href*="/company/"]'
       ];
       for (const sel of companySelectors) {
         const el = document.querySelector(sel);

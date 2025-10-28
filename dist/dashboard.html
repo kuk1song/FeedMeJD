@@ -252,6 +252,36 @@
       letter-spacing: 0.3px;
     }
 
+    .gems-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 8px 0 12px;
+    }
+
+    .gems-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .gems-toolbar input[type="search"],
+    .gems-toolbar select {
+      height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      padding: 0 10px;
+    }
+
+    .gems-toolbar input[type="search"] {
+      min-width: 220px;
+      flex: 0 1 280px;
+    }
+
     .gems-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -627,15 +657,16 @@
 
     <!-- Individual Gem Cards -->
     <section class="gems-section">
-      <h2>Your JD Gems</h2>
-      <div id="gems-toolbar" class="gems-toolbar" style="display:none; margin: 8px 0 12px; display:flex; gap:8px; align-items:center;">
-        <input id="gem-search" type="search" placeholder="Search gems..." aria-label="Search gems" style="
-          flex:1; min-width:180px; height:34px; padding:0 10px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--text); font-size:13px; ">
-        <select id="gem-sort" aria-label="Sort gems" style="height:34px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--text); font-size:13px; padding:0 10px;">
-          <option value="newest" selected>Newest</option>
-          <option value="oldest">Oldest</option>
-          <option value="title">Title A–Z</option>
-        </select>
+      <div class="gems-header">
+        <h2>Your JD Gems</h2>
+        <div id="gems-toolbar" class="gems-toolbar" style="display:none;">
+          <input id="gem-search" type="search" placeholder="Search gems..." aria-label="Search gems">
+          <select id="gem-sort" aria-label="Sort gems">
+            <option value="newest" selected>Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="title">Title A–Z</option>
+          </select>
+        </div>
       </div>
       <div id="gems-grid" class="gems-grid"></div>
     </section>
