@@ -1,8 +1,12 @@
 let currentView = "constellation";
 let skillData = { hard: /* @__PURE__ */ new Map(), soft: /* @__PURE__ */ new Map() };
+let allGems = [];
+let currentSearch = "";
+let currentSort = "newest";
 document.addEventListener("DOMContentLoaded", () => {
   loadAndDisplayGems();
   setupViewSwitcher();
+  setupGemsToolbar();
 });
 function setupViewSwitcher() {
   const constellationBtn = document.getElementById("constellation-view-btn");
@@ -30,10 +34,12 @@ function loadAndDisplayGems() {
     const gemsGrid = document.getElementById("gems-grid");
     const skillCrystalContainer = document.getElementById("skill-crystal");
     const gemsSectionTitle = document.querySelector(".gems-section h2");
+    const gemsToolbar = document.getElementById("gems-toolbar");
     if (gemEntries.length === 0) {
       skillData = { hard: /* @__PURE__ */ new Map(), soft: /* @__PURE__ */ new Map() };
       if (gemsGrid) gemsGrid.innerHTML = "";
       if (gemsSectionTitle) gemsSectionTitle.style.display = "none";
+      if (gemsToolbar) gemsToolbar.style.display = "none";
       if (skillCrystalContainer) {
         skillCrystalContainer.innerHTML = `
           <div class="empty-state">
@@ -45,11 +51,54 @@ function loadAndDisplayGems() {
       }
       return;
     }
-    displayGemCards(gemEntries);
+    allGems = gemEntries;
+    renderGemsList();
     if (gemsSectionTitle) gemsSectionTitle.style.display = "";
+    if (gemsToolbar) gemsToolbar.style.display = "";
     skillData = aggregateSkills(gemEntries);
     renderCurrentView();
   });
+}
+function setupGemsToolbar() {
+  const search = document.getElementById("gem-search");
+  const sort = document.getElementById("gem-sort");
+  if (search) {
+    search.addEventListener("input", () => {
+      currentSearch = search.value.trim().toLowerCase();
+      renderGemsList();
+    });
+  }
+  if (sort) {
+    sort.addEventListener("change", () => {
+      currentSort = sort.value || "newest";
+      renderGemsList();
+    });
+  }
+}
+function renderGemsList() {
+  const entries = [...allGems];
+  const filtered = entries.filter(([_, gem]) => {
+    if (!currentSearch) return true;
+    const title = gem.meta?.title?.toLowerCase() || "";
+    const company = gem.meta?.company?.toLowerCase() || "";
+    const skills = [...gem.skills.hard || [], ...gem.skills.soft || []].join(" ").toLowerCase();
+    return title.includes(currentSearch) || company.includes(currentSearch) || skills.includes(currentSearch);
+  });
+  filtered.sort((a, b) => {
+    const tsA = gemTimestamp(a[0], a[1]);
+    const tsB = gemTimestamp(b[0], b[1]);
+    if (currentSort === "newest") return tsB - tsA;
+    if (currentSort === "oldest") return tsA - tsB;
+    const ta = (a[1].meta?.title || a[0]).toLowerCase();
+    const tb = (b[1].meta?.title || b[0]).toLowerCase();
+    return ta.localeCompare(tb);
+  });
+  displayGemCards(filtered);
+}
+function gemTimestamp(gemId, gem) {
+  if (gem.meta?.timestamp) return gem.meta.timestamp;
+  const m = gemId.match(/gem_(\d+)/);
+  return m ? Number(m[1]) : 0;
 }
 function aggregateSkills(gemEntries) {
   const hard = /* @__PURE__ */ new Map();
@@ -316,10 +365,18 @@ function createGemCard(gemId, gem) {
   deleteBtn.title = "Delete this gem";
   deleteBtn.addEventListener("click", () => deleteGem(gemId, card));
   const cardContent = document.createElement("div");
+  const safeTitle = gem.meta?.title || gemId.replace("gem_", "Gem #");
+  const company = gem.meta?.company || "";
+  const url = gem.meta?.url || "";
+  const titleHtml = url ? `<a href="${url}" target="_blank" rel="noopener" class="gem-link">${safeTitle}</a>` : `<span class="gem-title">${safeTitle}</span>`;
+  const companyHtml = company ? `<div class="gem-company">${company}</div>` : "";
   cardContent.innerHTML = `
     <div class="gem-header">
       <img src="images/gem.png" alt="Gem" class="gem-icon">
-      <span class="gem-title">${gemId}</span>
+      <div class="gem-head-text">
+        ${titleHtml}
+        ${companyHtml}
+      </div>
     </div>
     <div class="gem-summary">${gem.summary}</div>
     <div class="skills-section">

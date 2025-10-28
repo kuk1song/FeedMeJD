@@ -6,6 +6,13 @@ interface Gem {
     hard: string[];
     soft: string[];
   };
+  meta?: {
+    jobId?: string | null;
+    title?: string;
+    company?: string;
+    url?: string;
+    timestamp?: number;
+  };
 }
 
 interface SkillData {
@@ -16,10 +23,14 @@ interface SkillData {
 // Current view state
 let currentView: 'constellation' | 'prism' = 'constellation';
 let skillData: SkillData = { hard: new Map(), soft: new Map() };
+let allGems: [string, Gem][] = [];
+let currentSearch = '';
+let currentSort: 'newest' | 'oldest' | 'title' = 'newest';
 
 document.addEventListener('DOMContentLoaded', () => {
   loadAndDisplayGems();
   setupViewSwitcher();
+  setupGemsToolbar();
 });
 
 /**
@@ -54,17 +65,19 @@ function setupViewSwitcher(): void {
 function loadAndDisplayGems(): void {
   chrome.storage.local.get(null, (items) => {
     // Filter out gem data
-    const gemEntries = Object.entries(items).filter(([key]) => key.startsWith('gem_'));
+    const gemEntries = Object.entries(items).filter(([key]) => key.startsWith('gem_')) as [string, Gem][];
     
     const gemsGrid = document.getElementById('gems-grid');
     const skillCrystalContainer = document.getElementById('skill-crystal');
     const gemsSectionTitle = document.querySelector('.gems-section h2') as HTMLElement | null;
+    const gemsToolbar = document.getElementById('gems-toolbar');
 
     if (gemEntries.length === 0) {
       // Reset aggregated data and UI to empty state
       skillData = { hard: new Map(), soft: new Map() };
       if (gemsGrid) gemsGrid.innerHTML = '';
       if (gemsSectionTitle) gemsSectionTitle.style.display = 'none';
+      if (gemsToolbar) gemsToolbar.style.display = 'none';
       if (skillCrystalContainer) {
         skillCrystalContainer.innerHTML = `
           <div class="empty-state">
@@ -77,11 +90,13 @@ function loadAndDisplayGems(): void {
       return;
     }
 
-    // Display individual gem cards
-    displayGemCards(gemEntries);
+    // Persist all gems and render filtered/sorted list
+    allGems = gemEntries;
+    renderGemsList();
     
     // Ensure JD Gems title is visible when we have data
     if (gemsSectionTitle) gemsSectionTitle.style.display = '';
+    if (gemsToolbar) gemsToolbar.style.display = '';
 
     // Aggregate skills
     skillData = aggregateSkills(gemEntries);
@@ -89,6 +104,58 @@ function loadAndDisplayGems(): void {
     // Render the current view
     renderCurrentView();
   });
+}
+
+/**
+ * Sets up search/sort toolbar listeners.
+ */
+function setupGemsToolbar(): void {
+  const search = document.getElementById('gem-search') as HTMLInputElement | null;
+  const sort = document.getElementById('gem-sort') as HTMLSelectElement | null;
+  if (search) {
+    search.addEventListener('input', () => {
+      currentSearch = search.value.trim().toLowerCase();
+      renderGemsList();
+    });
+  }
+  if (sort) {
+    sort.addEventListener('change', () => {
+      currentSort = (sort.value || 'newest') as 'newest' | 'oldest' | 'title';
+      renderGemsList();
+    });
+  }
+}
+
+/** Filter + sort + render current gem list */
+function renderGemsList(): void {
+  const entries = [...allGems];
+  // Filter
+  const filtered = entries.filter(([_, gem]) => {
+    if (!currentSearch) return true;
+    const title = gem.meta?.title?.toLowerCase() || '';
+    const company = gem.meta?.company?.toLowerCase() || '';
+    const skills = [...(gem.skills.hard || []), ...(gem.skills.soft || [])].join(' ').toLowerCase();
+    return title.includes(currentSearch) || company.includes(currentSearch) || skills.includes(currentSearch);
+  });
+
+  // Sort
+  filtered.sort((a, b) => {
+    const tsA = gemTimestamp(a[0], a[1]);
+    const tsB = gemTimestamp(b[0], b[1]);
+    if (currentSort === 'newest') return tsB - tsA;
+    if (currentSort === 'oldest') return tsA - tsB;
+    const ta = (a[1].meta?.title || a[0]).toLowerCase();
+    const tb = (b[1].meta?.title || b[0]).toLowerCase();
+    return ta.localeCompare(tb);
+  });
+
+  displayGemCards(filtered);
+}
+
+function gemTimestamp(gemId: string, gem: Gem): number {
+  if (gem.meta?.timestamp) return gem.meta.timestamp;
+  const m = gemId.match(/gem_(\d+)/);
+  return m ? Number(m[1]) : 0;
 }
 
 /**
@@ -448,10 +515,18 @@ function createGemCard(gemId: string, gem: Gem): HTMLElement {
   
   // Card content
   const cardContent = document.createElement('div');
+  const safeTitle = gem.meta?.title || gemId.replace('gem_', 'Gem #');
+  const company = gem.meta?.company || '';
+  const url = gem.meta?.url || '';
+  const titleHtml = url ? `<a href="${url}" target="_blank" rel="noopener" class="gem-link">${safeTitle}</a>` : `<span class="gem-title">${safeTitle}</span>`;
+  const companyHtml = company ? `<div class="gem-company">${company}</div>` : '';
   cardContent.innerHTML = `
     <div class="gem-header">
       <img src="images/gem.png" alt="Gem" class="gem-icon">
-      <span class="gem-title">${gemId}</span>
+      <div class="gem-head-text">
+        ${titleHtml}
+        ${companyHtml}
+      </div>
     </div>
     <div class="gem-summary">${gem.summary}</div>
     <div class="skills-section">
