@@ -330,9 +330,22 @@ async function deleteGem(gemId, cardElement) {
   if (!confirmed) return;
   cardElement.classList.add("is-deleting");
   setTimeout(() => {
-    chrome.storage.local.remove(gemId, () => {
-      console.log(`FeedMeJD: Deleted gem ${gemId}`);
-      loadAndDisplayGems();
+    chrome.storage.local.get([gemId, "analyzedJobs"], (items) => {
+      const gem = items[gemId];
+      const analyzedJobs = items["analyzedJobs"] || [];
+      const jobId = gem?.meta?.jobId;
+      chrome.storage.local.remove(gemId, () => {
+        console.log(`FeedMeJD: Deleted gem ${gemId}`);
+        if (jobId) {
+          const updated = analyzedJobs.filter((id) => id !== jobId);
+          chrome.storage.local.set({ analyzedJobs: updated }, () => {
+            console.log(`FeedMeJD: Removed job ${jobId} from analyzedJobs after gem deletion.`);
+            loadAndDisplayGems();
+          });
+        } else {
+          loadAndDisplayGems();
+        }
+      });
     });
   }, 300);
 }

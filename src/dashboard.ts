@@ -472,10 +472,29 @@ async function deleteGem(gemId: string, cardElement: HTMLElement): Promise<void>
 
   // Wait for animation to complete, then remove from storage
   setTimeout(() => {
-    chrome.storage.local.remove(gemId, () => {
-      console.log(`FeedMeJD: Deleted gem ${gemId}`);
-      // Reload the entire dashboard to reflect changes
-      loadAndDisplayGems();
+    // First fetch gem to get its jobId metadata
+    chrome.storage.local.get([gemId, 'analyzedJobs'], (items) => {
+      const gem: any = items[gemId];
+      const analyzedJobs: string[] = items['analyzedJobs'] || [];
+      const jobId: string | undefined | null = gem?.meta?.jobId;
+
+      // Remove the gem itself
+      chrome.storage.local.remove(gemId, () => {
+        console.log(`FeedMeJD: Deleted gem ${gemId}`);
+
+        // If jobId exists, also remove from analyzedJobs to sync LinkedIn pet state
+        if (jobId) {
+          const updated = analyzedJobs.filter(id => id !== jobId);
+          chrome.storage.local.set({ analyzedJobs: updated }, () => {
+            console.log(`FeedMeJD: Removed job ${jobId} from analyzedJobs after gem deletion.`);
+            // Reload dashboard to reflect changes
+            loadAndDisplayGems();
+          });
+        } else {
+          // No job mapping (legacy gem). Just reload UI.
+          loadAndDisplayGems();
+        }
+      });
     });
   }, 300);
 }

@@ -9,13 +9,24 @@ interface AnalysisResult {
   };
 }
 
+// Extended gem shape stored in chrome.storage with optional metadata
+interface PersistedGem extends AnalysisResult {
+  meta?: {
+    jobId?: string | null;
+    title?: string;
+    company?: string;
+    url?: string;
+    timestamp?: number;
+  };
+}
+
 // --- Main Event Listener ---
 chrome.runtime.onMessage.addListener(
-  (request: { type: string, text?: string }, sender, sendResponse) => {
+  (request: { type: string, text?: string, meta?: any }, sender, sendResponse) => {
     if (request.type === "ANALYZE_JD") {
       console.log("FeedMeJD: Received JD to analyze.");
       
-      handleAIAnalysis(request.text!)
+      handleAIAnalysis(request.text!, request.meta)
         .then(result => sendResponse({ success: true, data: result }))
         .catch(error => {
           console.error("FeedMeJD: Error in background analysis.", error);
@@ -129,7 +140,7 @@ function getLanguageModelFactory(): AILanguageModelFactory | null {
   return null;
 }
 
-async function handleAIAnalysis(text: string): Promise<AnalysisResult> {
+async function handleAIAnalysis(text: string, meta?: any): Promise<PersistedGem> {
   // Step 1: Detect the correct API
   const languageModelAPI = getLanguageModelFactory();
   
@@ -216,7 +227,8 @@ async function handleAIAnalysis(text: string): Promise<AnalysisResult> {
   
   console.log("FeedMeJD: AI response received and cleaned:", cleanedResponse);
 
-  const result: AnalysisResult = JSON.parse(cleanedResponse);
+  const parsed: AnalysisResult = JSON.parse(cleanedResponse);
+  const result: PersistedGem = { ...parsed, meta };
 
   const gemId = `gem_${Date.now()}`;
   await chrome.storage.local.set({ [gemId]: result });

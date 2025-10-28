@@ -189,6 +189,55 @@ if (typeof window.feedMeJdInjected === "undefined") {
       });
     }
     /**
+     * Public wrapper to re-run logic from external listeners.
+     */
+    refresh() {
+      this.runLogic();
+    }
+    /**
+     * Extract job metadata: best-effort title/company/url with current jobId.
+     */
+    extractJobMeta() {
+      const url = window.location.href;
+      const timestamp = Date.now();
+      const jobId = this.currentJobId;
+      let title;
+      let company;
+      const titleSelectors = [
+        ".jobs-unified-top-card__job-title",
+        ".job-details-jobs-unified-top-card__job-title",
+        ".top-card-layout__title",
+        "h1.jobs-unified-top-card__job-title"
+      ];
+      for (const sel of titleSelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.textContent) {
+          const t = el.textContent.trim();
+          if (t.length > 0 && t.length < 200) {
+            title = t;
+            break;
+          }
+        }
+      }
+      const companySelectors = [
+        ".jobs-unified-top-card__company-name a",
+        ".jobs-unified-top-card__company-name",
+        ".topcard__org-name-link",
+        ".top-card-layout__entity-info a"
+      ];
+      for (const sel of companySelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.textContent) {
+          const c = el.textContent.trim();
+          if (c.length > 0 && c.length < 200) {
+            company = c;
+            break;
+          }
+        }
+      }
+      return { jobId, title, company, url, timestamp };
+    }
+    /**
      * Handles the click event on the pet container.
      * - If completed: Opens dashboard
      * - If hungry: Starts analysis
@@ -217,7 +266,9 @@ if (typeof window.feedMeJdInjected === "undefined") {
       this.petContainer.classList.add("analyzing");
       const jdText = this.jdElement.innerText;
       console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters) for job ${jobIdSnapshot || "unknown"}. Sending to background...`);
-      chrome.runtime.sendMessage({ type: "ANALYZE_JD", text: jdText }, (response) => {
+      const meta = this.extractJobMeta();
+      meta.jobId = jobIdSnapshot;
+      chrome.runtime.sendMessage({ type: "ANALYZE_JD", text: jdText, meta }, (response) => {
         this.petContainer.classList.remove("analyzing");
         if (chrome.runtime.lastError) {
           console.error("FeedMeJD: Message sending failed.", chrome.runtime.lastError.message);
@@ -306,6 +357,11 @@ if (typeof window.feedMeJdInjected === "undefined") {
     if (request.type === "UNLOAD_PET_UI") {
       manager.cleanup();
       sendResponse({ success: true });
+    }
+  });
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.analyzedJobs) {
+      manager.refresh();
     }
   });
 }

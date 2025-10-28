@@ -3,7 +3,7 @@ chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
     if (request.type === "ANALYZE_JD") {
       console.log("FeedMeJD: Received JD to analyze.");
-      handleAIAnalysis(request.text).then((result) => sendResponse({ success: true, data: result })).catch((error) => {
+      handleAIAnalysis(request.text, request.meta).then((result) => sendResponse({ success: true, data: result })).catch((error) => {
         console.error("FeedMeJD: Error in background analysis.", error);
         sendResponse({ success: false, error: error.message });
       });
@@ -73,7 +73,7 @@ function getLanguageModelFactory() {
   }
   return null;
 }
-async function handleAIAnalysis(text) {
+async function handleAIAnalysis(text, meta) {
   const languageModelAPI = getLanguageModelFactory();
   if (!languageModelAPI) {
     console.error("FeedMeJD: Built-in AI (LanguageModel) is not available in this browser environment.");
@@ -133,7 +133,8 @@ async function handleAIAnalysis(text) {
   const aiResponse = await session.prompt(prompt);
   const cleanedResponse = aiResponse.replace(/^```json\s*/, "").replace(/```$/, "").trim();
   console.log("FeedMeJD: AI response received and cleaned:", cleanedResponse);
-  const result = JSON.parse(cleanedResponse);
+  const parsed = JSON.parse(cleanedResponse);
+  const result = { ...parsed, meta };
   const gemId = `gem_${Date.now()}`;
   await chrome.storage.local.set({ [gemId]: result });
   console.log(`FeedMeJD: AI analysis result saved as ${gemId}.`);
