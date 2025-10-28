@@ -241,6 +241,47 @@ function createPrismSection(title, skills, color) {
   section.appendChild(skillList);
   return section;
 }
+function createSkillTags(skills, limit = 8) {
+  const container = document.createElement("div");
+  container.className = "skill-tags";
+  skills.forEach((skill, index) => {
+    const tag = document.createElement("span");
+    tag.className = "skill-tag";
+    tag.textContent = skill;
+    if (index >= limit) {
+      tag.style.display = "none";
+      tag.dataset.hidden = "true";
+    }
+    container.appendChild(tag);
+  });
+  if (skills.length > limit) {
+    const remaining = skills.length - limit;
+    const moreBtn = document.createElement("span");
+    moreBtn.className = "skill-tag more-toggle";
+    moreBtn.textContent = `+${remaining} more`;
+    moreBtn.style.cursor = "pointer";
+    moreBtn.dataset.expanded = "false";
+    moreBtn.addEventListener("click", () => {
+      const expanded = moreBtn.dataset.expanded === "true";
+      const hiddenTags = Array.from(container.querySelectorAll('.skill-tag[data-hidden="true"]'));
+      if (expanded) {
+        hiddenTags.forEach((tag) => {
+          tag.style.display = "none";
+        });
+        moreBtn.textContent = `+${remaining} more`;
+        moreBtn.dataset.expanded = "false";
+      } else {
+        hiddenTags.forEach((tag) => {
+          tag.style.display = "inline-flex";
+        });
+        moreBtn.textContent = "Show less";
+        moreBtn.dataset.expanded = "true";
+      }
+    });
+    container.appendChild(moreBtn);
+  }
+  return container;
+}
 function displayGemCards(gemEntries) {
   const gemsGrid = document.getElementById("gems-grid");
   gemsGrid.innerHTML = "";
@@ -268,29 +309,25 @@ function createGemCard(gemId, gem) {
     <div class="skills-section">
       <div class="skill-category">
         <h4>Hard Skills</h4>
-        <div class="skill-tags">
-          ${gem.skills.hard.slice(0, 8).map(
-    (skill) => `<span class="skill-tag">${skill}</span>`
-  ).join("")}
-          ${gem.skills.hard.length > 8 ? `<span class="skill-tag">+${gem.skills.hard.length - 8} more</span>` : ""}
-        </div>
+        <div class="skill-tags" data-skill-hard></div>
       </div>
       <div class="skill-category">
         <h4>Soft Skills</h4>
-        <div class="skill-tags">
-          ${gem.skills.soft.slice(0, 8).map(
-    (skill) => `<span class="skill-tag">${skill}</span>`
-  ).join("")}
-          ${gem.skills.soft.length > 8 ? `<span class="skill-tag">+${gem.skills.soft.length - 8} more</span>` : ""}
-        </div>
+        <div class="skill-tags" data-skill-soft></div>
       </div>
     </div>
   `;
+  const hardMount = cardContent.querySelector("[data-skill-hard]");
+  const softMount = cardContent.querySelector("[data-skill-soft]");
+  hardMount.replaceWith(createSkillTags(gem.skills.hard, 8));
+  softMount.replaceWith(createSkillTags(gem.skills.soft, 8));
   card.appendChild(deleteBtn);
   card.appendChild(cardContent);
   return card;
 }
-function deleteGem(gemId, cardElement) {
+async function deleteGem(gemId, cardElement) {
+  const confirmed = await showConfirmModal("Delete this gem?", "This action cannot be undone.");
+  if (!confirmed) return;
   cardElement.classList.add("is-deleting");
   setTimeout(() => {
     chrome.storage.local.remove(gemId, () => {
@@ -298,4 +335,52 @@ function deleteGem(gemId, cardElement) {
       loadAndDisplayGems();
     });
   }, 300);
+}
+function showConfirmModal(title, message) {
+  const overlay = document.getElementById("confirm-overlay");
+  if (!overlay) {
+    return Promise.resolve(window.confirm(`${title}
+${message}`));
+  }
+  const titleEl = overlay.querySelector(".modal-title");
+  const msgEl = overlay.querySelector(".modal-message");
+  const okBtn = document.getElementById("confirm-ok");
+  const cancelBtn = document.getElementById("confirm-cancel");
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+  overlay.classList.add("is-open");
+  overlay.setAttribute("aria-hidden", "false");
+  return new Promise((resolve) => {
+    const cleanup = () => {
+      overlay.classList.remove("is-open");
+      overlay.setAttribute("aria-hidden", "true");
+      if (okBtn) okBtn.removeEventListener("click", onOk);
+      if (cancelBtn) cancelBtn.removeEventListener("click", onCancel);
+      overlay.removeEventListener("click", onOverlayClick);
+      document.removeEventListener("keydown", onKey);
+    };
+    const onOk = () => {
+      cleanup();
+      resolve(true);
+    };
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+    const onOverlayClick = (e) => {
+      if (e.target === overlay) {
+        onCancel();
+      }
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        onCancel();
+      }
+    };
+    if (okBtn) okBtn.addEventListener("click", onOk);
+    if (cancelBtn) cancelBtn.addEventListener("click", onCancel);
+    overlay.addEventListener("click", onOverlayClick);
+    document.addEventListener("keydown", onKey);
+    if (okBtn) setTimeout(() => okBtn.focus(), 0);
+  });
 }

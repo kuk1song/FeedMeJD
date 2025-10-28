@@ -365,6 +365,65 @@
       font-weight: 600;
     }
 
+    /* Differentiated style for the "+n more" / "Show less" toggle */
+    .skill-tag.more-toggle {
+      background: rgba(102, 126, 234, 0.08);
+      border: 1px dashed rgba(102, 126, 234, 0.35);
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      cursor: pointer;
+    }
+
+    .skill-tag.more-toggle:hover {
+      background: rgba(102, 126, 234, 0.12);
+      border-color: rgba(102, 126, 234, 0.5);
+    }
+
+    /* Custom confirm modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .modal-overlay.is-open { display: flex; }
+
+    .modal-card {
+      width: 92%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-hover);
+      padding: 18px 18px 14px;
+      color: var(--text);
+      animation: modal-pop 0.18s ease-out;
+    }
+
+    @keyframes modal-pop {
+      from { transform: translateY(4px) scale(0.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .modal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .modal-icon { width: 28px; height: 28px; display:flex; align-items:center; justify-content:center; border-radius: 50%; background: #f6f7fb; border: 1px solid var(--border); box-shadow: var(--shadow);} 
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--brand); }
+    .modal-message { font-size: 13px; color: var(--muted); margin: 6px 2px 14px; }
+    .modal-actions { display:flex; justify-content: flex-end; gap: 8px; }
+    .btn { border: 1px solid var(--border); background: #fff; color: var(--text); padding: 8px 14px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; transition: box-shadow 0.2s ease, transform 0.1s ease; }
+    .btn:hover { box-shadow: var(--shadow); }
+    .btn:active { transform: translateY(1px); }
+    .btn-ghost { background: #fff; color: var(--muted); }
+    .btn-danger { background: #fee; color: #b91c1c; border-color: #fcc; }
+    .btn-danger:hover { background: #fde2e2; }
+
     /* Constellation View Specific Styles */
     .constellation-view {
       display: flex;
@@ -566,6 +625,21 @@
       <h2>Your JD Gems</h2>
       <div id="gems-grid" class="gems-grid"></div>
     </section>
+  </div>
+
+  <!-- Elegant Confirm Modal -->
+  <div id="confirm-overlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="modal-header">
+        <div class="modal-icon">💎</div>
+        <div class="modal-title" id="confirm-title">Delete this gem?</div>
+      </div>
+      <div class="modal-message">This action cannot be undone.</div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+        <button class="btn btn-danger" id="confirm-ok">Delete</button>
+      </div>
+    </div>
   </div>
 
   <script src="dashboard.js"></script>

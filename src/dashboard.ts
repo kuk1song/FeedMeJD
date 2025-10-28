@@ -350,6 +350,56 @@ function createPrismSection(title: string, skills: [string, number][], color: st
 }
 
 /**
+ * Creates a container of skill tags with a "+n more" toggle.
+ */
+function createSkillTags(skills: string[], limit: number = 8): HTMLElement {
+  const container = document.createElement('div');
+  container.className = 'skill-tags';
+
+  // Render tags, hide those beyond the limit initially
+  skills.forEach((skill, index) => {
+    const tag = document.createElement('span');
+    tag.className = 'skill-tag';
+    tag.textContent = skill;
+    if (index >= limit) {
+      tag.style.display = 'none';
+      // Mark as hidden so we can query reliably later
+      (tag as HTMLElement).dataset.hidden = 'true';
+    }
+    container.appendChild(tag);
+  });
+
+  // Add "+n more" toggle if needed
+  if (skills.length > limit) {
+    const remaining = skills.length - limit;
+    const moreBtn = document.createElement('span');
+    moreBtn.className = 'skill-tag more-toggle';
+    moreBtn.textContent = `+${remaining} more`;
+    moreBtn.style.cursor = 'pointer';
+    (moreBtn as HTMLElement).dataset.expanded = 'false';
+
+    moreBtn.addEventListener('click', () => {
+      const expanded = (moreBtn as HTMLElement).dataset.expanded === 'true';
+      const hiddenTags = Array.from(container.querySelectorAll('.skill-tag[data-hidden="true"]')) as HTMLElement[];
+
+      if (expanded) {
+        hiddenTags.forEach(tag => { tag.style.display = 'none'; });
+        moreBtn.textContent = `+${remaining} more`;
+        (moreBtn as HTMLElement).dataset.expanded = 'false';
+      } else {
+        hiddenTags.forEach(tag => { tag.style.display = 'inline-flex'; });
+        moreBtn.textContent = 'Show less';
+        (moreBtn as HTMLElement).dataset.expanded = 'true';
+      }
+    });
+
+    container.appendChild(moreBtn);
+  }
+
+  return container;
+}
+
+/**
  * Displays individual gem cards in the grid.
  */
 function displayGemCards(gemEntries: [string, any][]): void {
@@ -388,24 +438,20 @@ function createGemCard(gemId: string, gem: Gem): HTMLElement {
     <div class="skills-section">
       <div class="skill-category">
         <h4>Hard Skills</h4>
-        <div class="skill-tags">
-          ${gem.skills.hard.slice(0, 8).map(skill => 
-            `<span class="skill-tag">${skill}</span>`
-          ).join('')}
-          ${gem.skills.hard.length > 8 ? `<span class="skill-tag">+${gem.skills.hard.length - 8} more</span>` : ''}
-        </div>
+        <div class="skill-tags" data-skill-hard></div>
       </div>
       <div class="skill-category">
         <h4>Soft Skills</h4>
-        <div class="skill-tags">
-          ${gem.skills.soft.slice(0, 8).map(skill => 
-            `<span class="skill-tag">${skill}</span>`
-          ).join('')}
-          ${gem.skills.soft.length > 8 ? `<span class="skill-tag">+${gem.skills.soft.length - 8} more</span>` : ''}
-        </div>
+        <div class="skill-tags" data-skill-soft></div>
       </div>
     </div>
   `;
+
+  // Insert dynamic skill tags with "+n more" toggle
+  const hardMount = cardContent.querySelector('[data-skill-hard]')!;
+  const softMount = cardContent.querySelector('[data-skill-soft]')!;
+  hardMount.replaceWith(createSkillTags(gem.skills.hard, 8));
+  softMount.replaceWith(createSkillTags(gem.skills.soft, 8));
   
   card.appendChild(deleteBtn);
   card.appendChild(cardContent);
@@ -416,10 +462,14 @@ function createGemCard(gemId: string, gem: Gem): HTMLElement {
 /**
  * Deletes a gem from storage and updates the UI.
  */
-function deleteGem(gemId: string, cardElement: HTMLElement): void {
+async function deleteGem(gemId: string, cardElement: HTMLElement): Promise<void> {
+  // Confirm before deleting with custom modal
+  const confirmed = await showConfirmModal('Delete this gem?', 'This action cannot be undone.');
+  if (!confirmed) return;
+
   // Add deleting animation
   cardElement.classList.add('is-deleting');
-  
+
   // Wait for animation to complete, then remove from storage
   setTimeout(() => {
     chrome.storage.local.remove(gemId, () => {
@@ -428,4 +478,50 @@ function deleteGem(gemId: string, cardElement: HTMLElement): void {
       loadAndDisplayGems();
     });
   }, 300);
+}
+
+/**
+ * Elegant confirm modal aligned with dashboard aesthetics.
+ */
+function showConfirmModal(title: string, message: string): Promise<boolean> {
+  const overlay = document.getElementById('confirm-overlay') as HTMLDivElement | null;
+  if (!overlay) {
+    // Fallback to native confirm if modal markup missing
+    return Promise.resolve(window.confirm(`${title}\n${message}`));
+  }
+
+  const titleEl = overlay.querySelector('.modal-title') as HTMLElement | null;
+  const msgEl = overlay.querySelector('.modal-message') as HTMLElement | null;
+  const okBtn = document.getElementById('confirm-ok') as HTMLButtonElement | null;
+  const cancelBtn = document.getElementById('confirm-cancel') as HTMLButtonElement | null;
+
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+
+  overlay.classList.add('is-open');
+  overlay.setAttribute('aria-hidden', 'false');
+
+  return new Promise<boolean>((resolve) => {
+    const cleanup = () => {
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      if (okBtn) okBtn.removeEventListener('click', onOk);
+      if (cancelBtn) cancelBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onOverlayClick);
+      document.removeEventListener('keydown', onKey);
+    };
+
+    const onOk = () => { cleanup(); resolve(true); };
+    const onCancel = () => { cleanup(); resolve(false); };
+    const onOverlayClick = (e: Event) => { if (e.target === overlay) { onCancel(); } };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { onCancel(); } };
+
+    if (okBtn) okBtn.addEventListener('click', onOk);
+    if (cancelBtn) cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onOverlayClick);
+    document.addEventListener('keydown', onKey);
+
+    // Focus primary action for quick keyboard interaction
+    if (okBtn) setTimeout(() => okBtn.focus(), 0);
+  });
 }
