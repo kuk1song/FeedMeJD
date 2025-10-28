@@ -29,9 +29,11 @@ function loadAndDisplayGems() {
     const gemEntries = Object.entries(items).filter(([key]) => key.startsWith("gem_"));
     const gemsGrid = document.getElementById("gems-grid");
     const skillCrystalContainer = document.getElementById("skill-crystal");
+    const gemsSectionTitle = document.querySelector(".gems-section h2");
     if (gemEntries.length === 0) {
       skillData = { hard: /* @__PURE__ */ new Map(), soft: /* @__PURE__ */ new Map() };
       if (gemsGrid) gemsGrid.innerHTML = "";
+      if (gemsSectionTitle) gemsSectionTitle.style.display = "none";
       if (skillCrystalContainer) {
         skillCrystalContainer.innerHTML = `
           <div class="empty-state">
@@ -44,6 +46,7 @@ function loadAndDisplayGems() {
       return;
     }
     displayGemCards(gemEntries);
+    if (gemsSectionTitle) gemsSectionTitle.style.display = "";
     skillData = aggregateSkills(gemEntries);
     renderCurrentView();
   });

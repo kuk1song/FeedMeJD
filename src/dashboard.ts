@@ -58,11 +58,13 @@ function loadAndDisplayGems(): void {
     
     const gemsGrid = document.getElementById('gems-grid');
     const skillCrystalContainer = document.getElementById('skill-crystal');
+    const gemsSectionTitle = document.querySelector('.gems-section h2') as HTMLElement | null;
 
     if (gemEntries.length === 0) {
       // Reset aggregated data and UI to empty state
       skillData = { hard: new Map(), soft: new Map() };
       if (gemsGrid) gemsGrid.innerHTML = '';
+      if (gemsSectionTitle) gemsSectionTitle.style.display = 'none';
       if (skillCrystalContainer) {
         skillCrystalContainer.innerHTML = `
           <div class="empty-state">
@@ -78,6 +80,9 @@ function loadAndDisplayGems(): void {
     // Display individual gem cards
     displayGemCards(gemEntries);
     
+    // Ensure JD Gems title is visible when we have data
+    if (gemsSectionTitle) gemsSectionTitle.style.display = '';
+
     // Aggregate skills
     skillData = aggregateSkills(gemEntries);
     
