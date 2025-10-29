@@ -23,14 +23,14 @@ interface PersistedGem extends AnalysisResult {
 // --- Main Event Listener ---
 chrome.runtime.onMessage.addListener(
   (request: { type: string, text?: string, meta?: any }, sender, sendResponse) => {
-    if (request.type === "ANALYZE_JD") {
+  if (request.type === "ANALYZE_JD") {
       console.log("FeedMeJD: Received JD to analyze.");
       
       handleAIAnalysis(request.text!, request.meta)
         .then(result => sendResponse({ success: true, data: result }))
-        .catch(error => {
+      .catch(error => {
           console.error("FeedMeJD: Error in background analysis.", error);
-          sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: error.message });
         });
       
       return true; // Indicates asynchronous response

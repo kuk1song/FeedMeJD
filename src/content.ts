@@ -196,7 +196,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
           this.setState('hungry');
           this.petImage.title = 'Click me to analyze this job!';
           this.tooltip.textContent = "Feed Me JD!";
-        } else {
+  } else {
           // No JD found on this page
           this.setState('idle');
           this.petImage.title = 'Click on a job posting to start!';
@@ -210,8 +210,8 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         this.petImage.title = 'Click on a job posting to start!';
         this.tooltip.textContent = "Pick a job you like!";
         this.petContainer.classList.add('disabled');
-      }
-    }
+  }
+}
 
 /**
      * Shows a celebration gem badge animation, then removes it.
@@ -381,7 +381,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
           return;
         }
         
-        if (response && response.success) {
+    if (response && response.success) {
           console.log("FeedMeJD: Analysis successful for job", jobIdSnapshot || 'unknown');
           
           // ✅ CRITICAL: Check if user is still on the same job
@@ -433,7 +433,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
           this.petImage.title = "Click to view analysis in dashboard";
           this.tooltip.textContent = "View Dashboard";
           this.petContainer.classList.add('completed');
-        } else {
+    } else {
           console.log(`FeedMeJD: User navigated away during animation. Skipping UI update.`);
           // Update UI for current job instead
           this.runLogic();
