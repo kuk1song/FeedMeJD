@@ -26,11 +26,18 @@ let skillData: SkillData = { hard: new Map(), soft: new Map() };
 let allGems: [string, Gem][] = [];
 let currentSearch = '';
 let currentSort: 'newest' | 'oldest' | 'title' = 'newest';
+let isSelectMode = false;
+let selectedGemIds = new Set<string>();
+let currentFiltered: [string, Gem][] = [];
+let renderedCount = 0;
+const pageSize = 24;
+let io: IntersectionObserver | null = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   loadAndDisplayGems();
   setupViewSwitcher();
   setupGemsToolbar();
+  setupSelectToggle();
 });
 
 /**
@@ -72,6 +79,7 @@ function loadAndDisplayGems(): void {
     const gemsSectionTitle = document.querySelector('.gems-section h2') as HTMLElement | null;
     const gemsToolbar = document.getElementById('gems-toolbar');
   const viewSwitcher = document.querySelector('.view-switcher') as HTMLElement | null;
+  const selectToggle = document.getElementById('toggle-select') as HTMLButtonElement | null;
 
     if (gemEntries.length === 0) {
       // Reset aggregated data and UI to empty state
@@ -80,6 +88,7 @@ function loadAndDisplayGems(): void {
       if (gemsSectionTitle) gemsSectionTitle.style.display = 'none';
       if (gemsToolbar) gemsToolbar.style.display = 'none';
       if (viewSwitcher) viewSwitcher.style.display = 'none';
+      if (selectToggle) selectToggle.style.display = 'none';
       if (skillCrystalContainer) {
         skillCrystalContainer.innerHTML = `
           <div class="empty-state">
@@ -100,6 +109,7 @@ function loadAndDisplayGems(): void {
     if (gemsSectionTitle) gemsSectionTitle.style.display = '';
     if (gemsToolbar) gemsToolbar.style.display = '';
     if (viewSwitcher) viewSwitcher.style.display = '';
+    if (selectToggle) selectToggle.style.display = '';
 
     // Aggregate skills
     skillData = aggregateSkills(gemEntries);
@@ -129,6 +139,20 @@ function setupGemsToolbar(): void {
   }
 }
 
+/** Selection toggle setup */
+function setupSelectToggle(): void {
+  const btn = document.getElementById('toggle-select') as HTMLButtonElement | null;
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    isSelectMode = !isSelectMode;
+    selectedGemIds.clear();
+    btn.textContent = isSelectMode ? 'Cancel' : 'Select';
+    updateBulkBar();
+    // Re-render current page so checkboxes appear/disappear
+    renderPage(true);
+  });
+}
+
 /** Filter + sort + render current gem list */
 function renderGemsList(): void {
   const entries = [...allGems];
@@ -154,7 +178,42 @@ function renderGemsList(): void {
     return ta.localeCompare(tb);
   });
 
-  displayGemCards(filtered);
+  currentFiltered = filtered;
+  renderPage(true);
+}
+
+/** Render grid with lazy loading */
+function renderPage(reset: boolean): void {
+  const grid = document.getElementById('gems-grid')!;
+  const sentinel = document.getElementById('gems-sentinel')!;
+  if (reset) {
+    renderedCount = 0;
+    grid.innerHTML = '';
+    if (io) { io.disconnect(); io = null; }
+  }
+  appendNextPage();
+
+  if (!io) {
+    io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          appendNextPage();
+        }
+      });
+    }, { rootMargin: '600px 0px' });
+    io.observe(sentinel);
+  }
+}
+
+function appendNextPage(): void {
+  const grid = document.getElementById('gems-grid')!;
+  const next = currentFiltered.slice(renderedCount, renderedCount + pageSize);
+  if (next.length === 0) return;
+  next.forEach(([gemId, gemData]) => {
+    const card = createGemCard(gemId, gemData);
+    grid.appendChild(card);
+  });
+  renderedCount += next.length;
 }
 
 function gemTimestamp(gemId: string, gem: Gem): number {
@@ -517,6 +576,7 @@ function createGemCard(gemId: string, gem: Gem): HTMLElement {
   deleteBtn.innerHTML = '×';
   deleteBtn.title = 'Delete this gem';
   deleteBtn.addEventListener('click', () => deleteGem(gemId, card));
+  if (isSelectMode) deleteBtn.style.display = 'none';
   
   // Card content
   const cardContent = document.createElement('div');
@@ -566,10 +626,71 @@ function createGemCard(gemId: string, gem: Gem): HTMLElement {
   hardMount.replaceWith(createSkillTags(gem.skills.hard, 8));
   softMount.replaceWith(createSkillTags(gem.skills.soft, 8));
   
+  // Selection checkbox in select mode
+  if (isSelectMode) {
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'gem-select';
+    checkbox.checked = selectedGemIds.has(gemId);
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) selectedGemIds.add(gemId); else selectedGemIds.delete(gemId);
+      updateBulkBar();
+    });
+    card.appendChild(checkbox);
+  }
+  
   card.appendChild(deleteBtn);
   card.appendChild(cardContent);
   
   return card;
+}
+
+/** Bulk selection helpers */
+function updateBulkBar(): void {
+  let bar = document.getElementById('bulk-actions');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'bulk-actions';
+    bar.innerHTML = `
+      <span id="bulk-count">0 selected</span>
+      <button id="bulk-delete" class="btn-bulk danger">Delete</button>
+    `;
+    document.body.appendChild(bar);
+    const del = document.getElementById('bulk-delete') as HTMLButtonElement;
+    del.addEventListener('click', deleteSelected);
+  }
+  const count = selectedGemIds.size;
+  const countEl = document.getElementById('bulk-count');
+  if (countEl) countEl.textContent = `${count} selected`;
+  (bar as HTMLElement).style.display = count > 0 && isSelectMode ? 'flex' : 'none';
+}
+
+async function deleteSelected(): Promise<void> {
+  const ids = Array.from(selectedGemIds);
+  if (ids.length === 0) return;
+  const ok = await showConfirmModal(`Delete ${ids.length} gems?`, 'This action cannot be undone.');
+  if (!ok) return;
+
+  chrome.storage.local.get([...ids, 'analyzedJobs'], (items) => {
+    const analyzedJobs: string[] = items['analyzedJobs'] || [];
+    const jobIdsToRemove = new Set<string>();
+    ids.forEach(id => {
+      const meta = (items[id] as any)?.meta;
+      if (meta?.jobId) jobIdsToRemove.add(meta.jobId);
+    });
+
+    chrome.storage.local.remove(ids, () => {
+      const updated = analyzedJobs.filter(id => !jobIdsToRemove.has(id));
+      chrome.storage.local.set({ analyzedJobs: updated }, () => {
+        selectedGemIds.clear();
+        isSelectMode = false;
+        const btn = document.getElementById('toggle-select');
+        if (btn) btn.textContent = 'Select';
+        updateBulkBar();
+        loadAndDisplayGems();
+      });
+    });
+  });
 }
 
 /**

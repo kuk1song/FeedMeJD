@@ -3,10 +3,17 @@ let skillData = { hard: /* @__PURE__ */ new Map(), soft: /* @__PURE__ */ new Map
 let allGems = [];
 let currentSearch = "";
 let currentSort = "newest";
+let isSelectMode = false;
+let selectedGemIds = /* @__PURE__ */ new Set();
+let currentFiltered = [];
+let renderedCount = 0;
+const pageSize = 24;
+let io = null;
 document.addEventListener("DOMContentLoaded", () => {
   loadAndDisplayGems();
   setupViewSwitcher();
   setupGemsToolbar();
+  setupSelectToggle();
 });
 function setupViewSwitcher() {
   const constellationBtn = document.getElementById("constellation-view-btn");
@@ -36,12 +43,14 @@ function loadAndDisplayGems() {
     const gemsSectionTitle = document.querySelector(".gems-section h2");
     const gemsToolbar = document.getElementById("gems-toolbar");
     const viewSwitcher = document.querySelector(".view-switcher");
+    const selectToggle = document.getElementById("toggle-select");
     if (gemEntries.length === 0) {
       skillData = { hard: /* @__PURE__ */ new Map(), soft: /* @__PURE__ */ new Map() };
       if (gemsGrid) gemsGrid.innerHTML = "";
       if (gemsSectionTitle) gemsSectionTitle.style.display = "none";
       if (gemsToolbar) gemsToolbar.style.display = "none";
       if (viewSwitcher) viewSwitcher.style.display = "none";
+      if (selectToggle) selectToggle.style.display = "none";
       if (skillCrystalContainer) {
         skillCrystalContainer.innerHTML = `
           <div class="empty-state">
@@ -58,6 +67,7 @@ function loadAndDisplayGems() {
     if (gemsSectionTitle) gemsSectionTitle.style.display = "";
     if (gemsToolbar) gemsToolbar.style.display = "";
     if (viewSwitcher) viewSwitcher.style.display = "";
+    if (selectToggle) selectToggle.style.display = "";
     skillData = aggregateSkills(gemEntries);
     renderCurrentView();
   });
@@ -77,6 +87,17 @@ function setupGemsToolbar() {
       renderGemsList();
     });
   }
+}
+function setupSelectToggle() {
+  const btn = document.getElementById("toggle-select");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    isSelectMode = !isSelectMode;
+    selectedGemIds.clear();
+    btn.textContent = isSelectMode ? "Cancel" : "Select";
+    updateBulkBar();
+    renderPage();
+  });
 }
 function renderGemsList() {
   const entries = [...allGems];
@@ -98,7 +119,41 @@ function renderGemsList() {
     const tb = (b[1].meta?.title || b[0]).toLowerCase();
     return ta.localeCompare(tb);
   });
-  displayGemCards(filtered);
+  currentFiltered = filtered;
+  renderPage();
+}
+function renderPage(reset) {
+  const grid = document.getElementById("gems-grid");
+  const sentinel = document.getElementById("gems-sentinel");
+  {
+    renderedCount = 0;
+    grid.innerHTML = "";
+    if (io) {
+      io.disconnect();
+      io = null;
+    }
+  }
+  appendNextPage();
+  if (!io) {
+    io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          appendNextPage();
+        }
+      });
+    }, { rootMargin: "600px 0px" });
+    io.observe(sentinel);
+  }
+}
+function appendNextPage() {
+  const grid = document.getElementById("gems-grid");
+  const next = currentFiltered.slice(renderedCount, renderedCount + pageSize);
+  if (next.length === 0) return;
+  next.forEach(([gemId, gemData]) => {
+    const card = createGemCard(gemId, gemData);
+    grid.appendChild(card);
+  });
+  renderedCount += next.length;
 }
 function gemTimestamp(gemId, gem) {
   if (gem.meta?.timestamp) return gem.meta.timestamp;
@@ -352,14 +407,6 @@ function createSkillTags(skills, limit = 8) {
   }
   return container;
 }
-function displayGemCards(gemEntries) {
-  const gemsGrid = document.getElementById("gems-grid");
-  gemsGrid.innerHTML = "";
-  gemEntries.forEach(([gemId, gemData]) => {
-    const card = createGemCard(gemId, gemData);
-    gemsGrid.appendChild(card);
-  });
-}
 function createGemCard(gemId, gem) {
   const card = document.createElement("div");
   card.className = "gem-card";
@@ -369,6 +416,7 @@ function createGemCard(gemId, gem) {
   deleteBtn.innerHTML = "×";
   deleteBtn.title = "Delete this gem";
   deleteBtn.addEventListener("click", () => deleteGem(gemId, card));
+  if (isSelectMode) deleteBtn.style.display = "none";
   const cardContent = document.createElement("div");
   const safeTitle = gem.meta?.title || gemId.replace("gem_", "Gem #");
   const company = gem.meta?.company || "";
@@ -410,9 +458,64 @@ function createGemCard(gemId, gem) {
   const softMount = cardContent.querySelector("[data-skill-soft]");
   hardMount.replaceWith(createSkillTags(gem.skills.hard, 8));
   softMount.replaceWith(createSkillTags(gem.skills.soft, 8));
+  if (isSelectMode) {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "gem-select";
+    checkbox.checked = selectedGemIds.has(gemId);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedGemIds.add(gemId);
+      else selectedGemIds.delete(gemId);
+      updateBulkBar();
+    });
+    card.appendChild(checkbox);
+  }
   card.appendChild(deleteBtn);
   card.appendChild(cardContent);
   return card;
+}
+function updateBulkBar() {
+  let bar = document.getElementById("bulk-actions");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "bulk-actions";
+    bar.innerHTML = `
+      <span id="bulk-count">0 selected</span>
+      <button id="bulk-delete" class="btn-bulk danger">Delete</button>
+    `;
+    document.body.appendChild(bar);
+    const del = document.getElementById("bulk-delete");
+    del.addEventListener("click", deleteSelected);
+  }
+  const count = selectedGemIds.size;
+  const countEl = document.getElementById("bulk-count");
+  if (countEl) countEl.textContent = `${count} selected`;
+  bar.style.display = count > 0 && isSelectMode ? "flex" : "none";
+}
+async function deleteSelected() {
+  const ids = Array.from(selectedGemIds);
+  if (ids.length === 0) return;
+  const ok = await showConfirmModal(`Delete ${ids.length} gems?`, "This action cannot be undone.");
+  if (!ok) return;
+  chrome.storage.local.get([...ids, "analyzedJobs"], (items) => {
+    const analyzedJobs = items["analyzedJobs"] || [];
+    const jobIdsToRemove = /* @__PURE__ */ new Set();
+    ids.forEach((id) => {
+      const meta = items[id]?.meta;
+      if (meta?.jobId) jobIdsToRemove.add(meta.jobId);
+    });
+    chrome.storage.local.remove(ids, () => {
+      const updated = analyzedJobs.filter((id) => !jobIdsToRemove.has(id));
+      chrome.storage.local.set({ analyzedJobs: updated }, () => {
+        selectedGemIds.clear();
+        isSelectMode = false;
+        const btn = document.getElementById("toggle-select");
+        if (btn) btn.textContent = "Select";
+        updateBulkBar();
+        loadAndDisplayGems();
+      });
+    });
+  });
 }
 async function deleteGem(gemId, cardElement) {
   const confirmed = await showConfirmModal("Delete this gem?", "This action cannot be undone.");

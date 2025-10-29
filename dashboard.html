@@ -266,6 +266,53 @@
       align-items: center;
     }
 
+    .select-toggle {
+      margin-right: auto;
+      margin-left: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 10px;
+      height: 34px;
+      padding: 0 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: box-shadow 0.2s ease, transform 0.1s ease;
+    }
+    .select-toggle:hover { box-shadow: var(--shadow); }
+    .select-toggle:active { transform: translateY(1px); }
+
+    /* Selection mode checkbox */
+    .gem-select {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    /* Bulk action bar */
+    #bulk-actions {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 20px;
+      display: none;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-hover);
+      padding: 10px 14px;
+      border-radius: 12px;
+      align-items: center;
+      z-index: 999;
+    }
+    #bulk-count { font-weight: 700; color: var(--brand); margin-right: 6px; }
+    .btn-bulk { border: 1px solid var(--border); background:#fff; color:var(--text); border-radius:10px; height:32px; padding:0 12px; font-weight:600; cursor:pointer; }
+    .btn-bulk.danger { background:#fee; color:#b91c1c; border-color:#fcc; }
+
     .gems-toolbar input[type="search"],
     .gems-toolbar select {
       height: 34px;
@@ -660,6 +707,7 @@
     <section class="gems-section">
       <div class="gems-header">
         <h2>Your JD Gems</h2>
+        <button id="toggle-select" class="select-toggle" style="display:none;">Select</button>
         <div id="gems-toolbar" class="gems-toolbar" style="display:none;">
           <input id="gem-search" type="search" placeholder="Search gems..." aria-label="Search gems">
           <select id="gem-sort" aria-label="Sort gems">
@@ -670,6 +718,7 @@
         </div>
       </div>
       <div id="gems-grid" class="gems-grid"></div>
+      <div id="gems-sentinel" style="height:1px;"></div>
     </section>
   </div>
 
