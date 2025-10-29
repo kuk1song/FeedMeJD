@@ -241,33 +241,6 @@ if (typeof window.feedMeJdInjected === "undefined") {
           }
         }
       }
-      if (!company) {
-        const topCard = document.querySelector('.jobs-unified-top-card, .top-card-layout, [data-test="job-details"] , .job-details-jobs-unified-top-card');
-        if (topCard) {
-          const link = topCard.querySelector('a[href*="/company/"], a[data-test-job-company-name-link], .topcard__org-name-link');
-          if (link && link.textContent) {
-            const c = link.textContent.trim();
-            if (c.length > 0 && c.length < 200) company = c;
-          }
-        }
-      }
-      if (!company) {
-        try {
-          const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
-          for (const s of scripts) {
-            const txt = s.textContent || "";
-            if (txt.includes("JobPosting")) {
-              const json = JSON.parse(txt);
-              const name = json?.hiringOrganization?.name || (Array.isArray(json) ? json.find((x) => x["@type"] === "JobPosting")?.hiringOrganization?.name : void 0);
-              if (typeof name === "string" && name.trim()) {
-                company = name.trim();
-                break;
-              }
-            }
-          }
-        } catch {
-        }
-      }
       return { jobId, title, company, url, timestamp };
     }
     /**

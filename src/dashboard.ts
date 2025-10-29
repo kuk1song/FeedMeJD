@@ -132,10 +132,12 @@ function renderGemsList(): void {
   // Filter
   const filtered = entries.filter(([_, gem]) => {
     if (!currentSearch) return true;
+    const q = currentSearch;
     const title = gem.meta?.title?.toLowerCase() || '';
     const company = gem.meta?.company?.toLowerCase() || '';
     const skills = [...(gem.skills.hard || []), ...(gem.skills.soft || [])].join(' ').toLowerCase();
-    return title.includes(currentSearch) || company.includes(currentSearch) || skills.includes(currentSearch);
+    const summary = (gem.summary || '').toLowerCase();
+    return title.includes(q) || company.includes(q) || skills.includes(q) || summary.includes(q);
   });
 
   // Sort
@@ -528,7 +530,7 @@ function createGemCard(gemId: string, gem: Gem): HTMLElement {
         ${companyHtml}
       </div>
     </div>
-    <div class="gem-summary">${gem.summary}</div>
+    <div class="gem-summary"></div>
     <div class="skills-section">
       <div class="skill-category">
         <h4>Hard Skills</h4>
@@ -540,6 +542,20 @@ function createGemCard(gemId: string, gem: Gem): HTMLElement {
       </div>
     </div>
   `;
+
+  // Set summary text and optionally emphasize company name in summary (first occurrence only)
+  const summaryEl = cardContent.querySelector('.gem-summary') as HTMLElement;
+  const summaryText = gem.summary || '';
+  if (company) {
+    // Escape then highlight company name
+    const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'} as any)[c]);
+    const escaped = esc(summaryText);
+    const pattern = new RegExp(`\\b${company.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`);
+    const html = escaped.replace(pattern, '<span class="company-emph">$&</span>');
+    summaryEl.innerHTML = html;
+  } else {
+    summaryEl.textContent = summaryText;
+  }
 
   // Insert dynamic skill tags with "+n more" toggle
   const hardMount = cardContent.querySelector('[data-skill-hard]')!;

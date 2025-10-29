@@ -79,10 +79,12 @@ function renderGemsList() {
   const entries = [...allGems];
   const filtered = entries.filter(([_, gem]) => {
     if (!currentSearch) return true;
+    const q = currentSearch;
     const title = gem.meta?.title?.toLowerCase() || "";
     const company = gem.meta?.company?.toLowerCase() || "";
     const skills = [...gem.skills.hard || [], ...gem.skills.soft || []].join(" ").toLowerCase();
-    return title.includes(currentSearch) || company.includes(currentSearch) || skills.includes(currentSearch);
+    const summary = (gem.summary || "").toLowerCase();
+    return title.includes(q) || company.includes(q) || skills.includes(q) || summary.includes(q);
   });
   filtered.sort((a, b) => {
     const tsA = gemTimestamp(a[0], a[1]);
@@ -378,7 +380,7 @@ function createGemCard(gemId, gem) {
         ${companyHtml}
       </div>
     </div>
-    <div class="gem-summary">${gem.summary}</div>
+    <div class="gem-summary"></div>
     <div class="skills-section">
       <div class="skill-category">
         <h4>Hard Skills</h4>
@@ -390,6 +392,17 @@ function createGemCard(gemId, gem) {
       </div>
     </div>
   `;
+  const summaryEl = cardContent.querySelector(".gem-summary");
+  const summaryText = gem.summary || "";
+  if (company) {
+    const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const escaped = esc(summaryText);
+    const pattern = new RegExp(`\\b${company.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\b`);
+    const html = escaped.replace(pattern, '<span class="company-emph">$&</span>');
+    summaryEl.innerHTML = html;
+  } else {
+    summaryEl.textContent = summaryText;
+  }
   const hardMount = cardContent.querySelector("[data-skill-hard]");
   const softMount = cardContent.querySelector("[data-skill-soft]");
   hardMount.replaceWith(createSkillTags(gem.skills.hard, 8));

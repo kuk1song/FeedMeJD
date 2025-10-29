@@ -304,38 +304,12 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         }
       }
 
-      // Fallback 1: search within top-card container for a company link
-      if (!company) {
-        const topCard = document.querySelector('.jobs-unified-top-card, .top-card-layout, [data-test="job-details"] , .job-details-jobs-unified-top-card');
-        if (topCard) {
-          const link = topCard.querySelector('a[href*="/company/"], a[data-test-job-company-name-link], .topcard__org-name-link');
-          if (link && link.textContent) {
-            const c = link.textContent.trim();
-            if (c.length > 0 && c.length < 200) company = c;
-          }
-        }
-      }
-
-      // Fallback 2: parse JSON-LD for JobPosting.hiringOrganization.name
-      if (!company) {
-        try {
-          const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]')) as HTMLScriptElement[];
-          for (const s of scripts) {
-            const txt = s.textContent || '';
-            if (txt.includes('JobPosting')) {
-              const json = JSON.parse(txt);
-              const name = json?.hiringOrganization?.name || (Array.isArray(json) ? json.find((x:any)=>x['@type']==='JobPosting')?.hiringOrganization?.name : undefined);
-              if (typeof name === 'string' && name.trim()) {
-                company = name.trim();
-                break;
-              }
-            }
-          }
-        } catch {}
-      }
+      // Note: Avoid heavier fallbacks (top-card deep search / JSON-LD parsing)
+      // to keep extraction lightweight. If not found, we gracefully omit company.
 
       return { jobId, title, company, url, timestamp };
     }
+
 
     /**
      * Handles the click event on the pet container.
