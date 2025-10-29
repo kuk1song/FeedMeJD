@@ -181,8 +181,8 @@ if (typeof window.feedMeJdInjected === 'undefined') {
           if (isAnalyzed) {
             // This job was already analyzed - show "done" state (done image has gem)
             this.setState('done');
-            this.petImage.title = "Click to view analysis in dashboard";
-            this.tooltip.textContent = "View Dashboard";
+            this.petImage.title = "Click to view analysis in gallery";
+            this.tooltip.textContent = "View Gallery";
             this.petContainer.classList.add('completed');
             // No badge needed - the done image already has a gem
           } else {
@@ -351,7 +351,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       this.setState('eating');
       
       // Update pet's title and add analyzing state
-      this.petImage.title = 'Analyzing... This may take a while';
+      this.petImage.title = 'Analyzing... This may take a while...';
       this.petContainer.classList.add('analyzing');
 
       const jdText = this.jdElement.innerText;
@@ -430,8 +430,8 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         if (this.currentJobId === analyzedJobId) {
           console.log("FeedMeJD: Switching to 'done' state...");
           this.setState('done');
-          this.petImage.title = "Click to view analysis in dashboard";
-          this.tooltip.textContent = "View Dashboard";
+          this.petImage.title = "Click to view analysis in gallery";
+          this.tooltip.textContent = "View Gallery";
           this.petContainer.classList.add('completed');
     } else {
           console.log(`FeedMeJD: User navigated away during animation. Skipping UI update.`);

@@ -127,8 +127,8 @@ if (typeof window.feedMeJdInjected === "undefined") {
           const isAnalyzed = await this.isJobAnalyzed(this.currentJobId);
           if (isAnalyzed) {
             this.setState("done");
-            this.petImage.title = "Click to view analysis in dashboard";
-            this.tooltip.textContent = "View Dashboard";
+            this.petImage.title = "Click to view analysis in gallery";
+            this.tooltip.textContent = "View Gallery";
             this.petContainer.classList.add("completed");
           } else {
             this.setState("hungry");
@@ -268,7 +268,7 @@ if (typeof window.feedMeJdInjected === "undefined") {
       const jobIdSnapshot = this.currentJobId;
       this.isAnalyzing = true;
       this.setState("eating");
-      this.petImage.title = "Analyzing... This may take a while";
+      this.petImage.title = "Analyzing... This may take a while...";
       this.petContainer.classList.add("analyzing");
       const jdText = this.jdElement.innerText;
       console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters) for job ${jobIdSnapshot || "unknown"}. Sending to background...`);
@@ -326,8 +326,8 @@ if (typeof window.feedMeJdInjected === "undefined") {
         if (this.currentJobId === analyzedJobId) {
           console.log("FeedMeJD: Switching to 'done' state...");
           this.setState("done");
-          this.petImage.title = "Click to view analysis in dashboard";
-          this.tooltip.textContent = "View Dashboard";
+          this.petImage.title = "Click to view analysis in gallery";
+          this.tooltip.textContent = "View Gallery";
           this.petContainer.classList.add("completed");
         } else {
           console.log(`FeedMeJD: User navigated away during animation. Skipping UI update.`);
