@@ -25,10 +25,27 @@ if (typeof window.feedMeJdInjected === 'undefined') {
     private currentJobId: string | null = null;
     private isAnalyzing: boolean = false;
     private currentState: 'idle' | 'hungry' | 'eating' | 'done' = 'idle'; // Track current state to avoid redundant updates
+    private analyzedJobsCache: Set<string> = new Set();
+    private cacheInitialized: boolean = false;
+    private cachePromise: Promise<void> | null = null;
+    private storageListener: ((changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => void) | null = null;
 
     constructor() {
       this.createUI();
       this.setupObserver();
+      this.cachePromise = this.loadAnalyzedJobsCache().finally(() => {
+        this.cachePromise = null;
+      });
+
+      this.storageListener = (changes, area) => {
+        if (area === 'local' && changes.analyzedJobs) {
+          const newValue = changes.analyzedJobs.newValue as string[] | undefined;
+          this.updateAnalyzedJobsCache(newValue);
+          this.refresh();
+        }
+      };
+      chrome.storage.onChanged.addListener(this.storageListener);
+
       // Wait for DOM to be fully ready before running initial logic
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => this.runLogic());
@@ -36,6 +53,27 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         // DOM is already loaded, run with a small delay to ensure stability
         setTimeout(() => this.runLogic(), 100);
       }
+    }
+
+    private loadAnalyzedJobsCache(): Promise<void> {
+      return new Promise((resolve) => {
+        chrome.storage.local.get(['analyzedJobs'], (result) => {
+          if (chrome.runtime.lastError) {
+            console.warn('FeedMeJD: Failed to load analyzedJobs cache:', chrome.runtime.lastError.message);
+            this.updateAnalyzedJobsCache(undefined);
+            resolve();
+            return;
+          }
+          const analyzedJobs = Array.isArray(result.analyzedJobs) ? result.analyzedJobs : [];
+          this.updateAnalyzedJobsCache(analyzedJobs);
+          resolve();
+        });
+      });
+    }
+
+    private updateAnalyzedJobsCache(entries: string[] | undefined): void {
+      this.analyzedJobsCache = new Set(entries || []);
+      this.cacheInitialized = true;
     }
 
     /**
@@ -234,22 +272,15 @@ if (typeof window.feedMeJdInjected === 'undefined') {
      * @returns True if the job has been analyzed, false otherwise.
      */
     private async isJobAnalyzed(jobId: string): Promise<boolean> {
-      return new Promise((resolve) => {
+      if (!this.cacheInitialized && this.cachePromise) {
         try {
-          chrome.storage.local.get(['analyzedJobs'], (result) => {
-            if (chrome.runtime.lastError) {
-              console.warn("FeedMeJD: Could not check job analysis status:", chrome.runtime.lastError.message);
-              resolve(false);
-              return;
-            }
-            const analyzedJobs: string[] = result.analyzedJobs || [];
-            resolve(analyzedJobs.includes(jobId));
-          });
+          await this.cachePromise;
         } catch (error) {
-          console.warn("FeedMeJD: Exception in isJobAnalyzed:", error);
-          resolve(false);
+          console.warn('FeedMeJD: Failed to await analyzedJobs cache load:', error);
         }
-      });
+      }
+
+      return this.analyzedJobsCache.has(jobId);
     }
 
     /**
@@ -447,21 +478,34 @@ if (typeof window.feedMeJdInjected === 'undefined') {
      * @param jobId The job's unique ID.
      */
     private markJobAsAnalyzed(jobId: string): void {
+      if (jobId) {
+        this.analyzedJobsCache.add(jobId);
+        this.cacheInitialized = true;
+      }
+
       chrome.storage.local.get(['analyzedJobs'], (result) => {
-        const analyzedJobs: string[] = result.analyzedJobs || [];
+        const analyzedJobs: string[] = Array.isArray(result.analyzedJobs) ? result.analyzedJobs : [];
         if (!analyzedJobs.includes(jobId)) {
           analyzedJobs.push(jobId);
           chrome.storage.local.set({ analyzedJobs }, () => {
             console.log(`FeedMeJD: Job ${jobId} marked as analyzed.`);
           });
-    }
-  });
+        }
+      });
 }
 
     public cleanup(): void {
       console.log("FeedMeJD: Cleaning up and unloading Pet UI...");
       this.observer.disconnect();
+      if (this.timeoutId) {
+        clearTimeout(this.timeoutId);
+        this.timeoutId = undefined;
+      }
       this.petContainer.remove();
+      if (this.storageListener) {
+        chrome.storage.onChanged.removeListener(this.storageListener);
+        this.storageListener = null;
+      }
       // @ts-ignore
       window.feedMeJdInjected = undefined; // Allow re-injection later
     }
@@ -476,13 +520,6 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       manager.cleanup();
       // Optional: send a response to the background script
       sendResponse({ success: true }); 
-    }
-  });
-
-  // Refresh pet state when analyzedJobs changes (e.g., gem deleted from dashboard)
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.analyzedJobs) {
-      manager.refresh();
     }
   });
 

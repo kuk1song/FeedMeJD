@@ -12,14 +12,48 @@ if (typeof window.feedMeJdInjected === "undefined") {
     isAnalyzing = false;
     currentState = "idle";
     // Track current state to avoid redundant updates
+    analyzedJobsCache = /* @__PURE__ */ new Set();
+    cacheInitialized = false;
+    cachePromise = null;
+    storageListener = null;
     constructor() {
       this.createUI();
       this.setupObserver();
+      this.cachePromise = this.loadAnalyzedJobsCache().finally(() => {
+        this.cachePromise = null;
+      });
+      this.storageListener = (changes, area) => {
+        if (area === "local" && changes.analyzedJobs) {
+          const newValue = changes.analyzedJobs.newValue;
+          this.updateAnalyzedJobsCache(newValue);
+          this.refresh();
+        }
+      };
+      chrome.storage.onChanged.addListener(this.storageListener);
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => this.runLogic());
       } else {
         setTimeout(() => this.runLogic(), 100);
       }
+    }
+    loadAnalyzedJobsCache() {
+      return new Promise((resolve) => {
+        chrome.storage.local.get(["analyzedJobs"], (result) => {
+          if (chrome.runtime.lastError) {
+            console.warn("FeedMeJD: Failed to load analyzedJobs cache:", chrome.runtime.lastError.message);
+            this.updateAnalyzedJobsCache(void 0);
+            resolve();
+            return;
+          }
+          const analyzedJobs = Array.isArray(result.analyzedJobs) ? result.analyzedJobs : [];
+          this.updateAnalyzedJobsCache(analyzedJobs);
+          resolve();
+        });
+      });
+    }
+    updateAnalyzedJobsCache(entries) {
+      this.analyzedJobsCache = new Set(entries || []);
+      this.cacheInitialized = true;
     }
     /**
      * Creates the pet's UI elements and injects them into the page.
@@ -171,22 +205,14 @@ if (typeof window.feedMeJdInjected === "undefined") {
      * @returns True if the job has been analyzed, false otherwise.
      */
     async isJobAnalyzed(jobId) {
-      return new Promise((resolve) => {
+      if (!this.cacheInitialized && this.cachePromise) {
         try {
-          chrome.storage.local.get(["analyzedJobs"], (result) => {
-            if (chrome.runtime.lastError) {
-              console.warn("FeedMeJD: Could not check job analysis status:", chrome.runtime.lastError.message);
-              resolve(false);
-              return;
-            }
-            const analyzedJobs = result.analyzedJobs || [];
-            resolve(analyzedJobs.includes(jobId));
-          });
+          await this.cachePromise;
         } catch (error) {
-          console.warn("FeedMeJD: Exception in isJobAnalyzed:", error);
-          resolve(false);
+          console.warn("FeedMeJD: Failed to await analyzedJobs cache load:", error);
         }
-      });
+      }
+      return this.analyzedJobsCache.has(jobId);
     }
     /**
      * Public wrapper to re-run logic from external listeners.
@@ -341,8 +367,12 @@ if (typeof window.feedMeJdInjected === "undefined") {
      * @param jobId The job's unique ID.
      */
     markJobAsAnalyzed(jobId) {
+      if (jobId) {
+        this.analyzedJobsCache.add(jobId);
+        this.cacheInitialized = true;
+      }
       chrome.storage.local.get(["analyzedJobs"], (result) => {
-        const analyzedJobs = result.analyzedJobs || [];
+        const analyzedJobs = Array.isArray(result.analyzedJobs) ? result.analyzedJobs : [];
         if (!analyzedJobs.includes(jobId)) {
           analyzedJobs.push(jobId);
           chrome.storage.local.set({ analyzedJobs }, () => {
@@ -354,7 +384,15 @@ if (typeof window.feedMeJdInjected === "undefined") {
     cleanup() {
       console.log("FeedMeJD: Cleaning up and unloading Pet UI...");
       this.observer.disconnect();
+      if (this.timeoutId) {
+        clearTimeout(this.timeoutId);
+        this.timeoutId = void 0;
+      }
       this.petContainer.remove();
+      if (this.storageListener) {
+        chrome.storage.onChanged.removeListener(this.storageListener);
+        this.storageListener = null;
+      }
       window.feedMeJdInjected = void 0;
     }
   }
@@ -363,11 +401,6 @@ if (typeof window.feedMeJdInjected === "undefined") {
     if (request.type === "UNLOAD_PET_UI") {
       manager.cleanup();
       sendResponse({ success: true });
-    }
-  });
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "local" && changes.analyzedJobs) {
-      manager.refresh();
     }
   });
 }
