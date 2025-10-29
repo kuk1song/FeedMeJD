@@ -50,17 +50,20 @@ body {
   top: 50%;
   transform: translateY(-50%) translateX(10px);
   margin-right: 16px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a; /* brand dark */
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
   font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0.2px;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(6px);
 }
 
 /* Tooltip arrow */
@@ -72,9 +75,10 @@ body {
   transform: translateY(-50%);
   width: 0;
   height: 0;
-  border-left: 6px solid #764ba2;
+  border-left: 6px solid rgba(255, 255, 255, 0.92);
   border-top: 6px solid transparent;
   border-bottom: 6px solid transparent;
+  filter: drop-shadow(0 1px 1px rgba(15,23,42,0.08));
 }
 
 /* Show tooltip on hover */
@@ -194,4 +198,15 @@ body {
 #feedmejd-pet-container.disabled:hover {
   opacity: 1; /* Stay fully visible on hover */
   transform: translateY(-50%) scale(1.05); /* Subtle scale to show it's still "alive" */
+}
+
+/* Tone down tooltip in disabled state */
+#feedmejd-pet-container.disabled .feedmejd-tooltip {
+  color: #64748b; /* muted */
+  border-color: rgba(15, 23, 42, 0.06);
+}
+
+/* Slight color hint when completed */
+#feedmejd-pet-container.completed .feedmejd-tooltip {
+  color: #0f172a;
 }
