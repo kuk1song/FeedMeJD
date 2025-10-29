@@ -199,6 +199,8 @@ async function handleAIAnalysis(text: string, meta?: any): Promise<PersistedGem>
   const prompt = `
     Analyze the following job description text.
     Extract the key skills and provide a brief summary.
+    The summary must be 2-3 sentences. If the company name and/or role title are explicitly present in the text, mention them in the FIRST sentence (e.g., "At <Company>, the <Role> ...").
+    If they are not determinable from the text, do not fabricate or guess.
     Return the result ONLY as a valid JSON object in the following format, with no other text or explanations before or after the JSON block.
     
     Format:
@@ -209,7 +211,7 @@ async function handleAIAnalysis(text: string, meta?: any): Promise<PersistedGem>
         "soft": ["<skill 1>", "<skill 2>", "..."]
       }
     }
-
+    
     Job Description:
     ---
     ${text}
