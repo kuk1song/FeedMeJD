@@ -351,7 +351,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       this.setState('eating');
       
       // Update pet's title and add analyzing state
-      this.petImage.title = 'Analyzing... This may take a while if the AI model needs to download!';
+      this.petImage.title = 'Analyzing... This may take a while';
       this.petContainer.classList.add('analyzing');
 
       const jdText = this.jdElement.innerText;

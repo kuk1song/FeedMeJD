@@ -268,7 +268,7 @@ if (typeof window.feedMeJdInjected === "undefined") {
       const jobIdSnapshot = this.currentJobId;
       this.isAnalyzing = true;
       this.setState("eating");
-      this.petImage.title = "Analyzing... This may take a while if the AI model needs to download!";
+      this.petImage.title = "Analyzing... This may take a while";
       this.petContainer.classList.add("analyzing");
       const jdText = this.jdElement.innerText;
       console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters) for job ${jobIdSnapshot || "unknown"}. Sending to background...`);
