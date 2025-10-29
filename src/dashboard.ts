@@ -71,6 +71,7 @@ function loadAndDisplayGems(): void {
     const skillCrystalContainer = document.getElementById('skill-crystal');
     const gemsSectionTitle = document.querySelector('.gems-section h2') as HTMLElement | null;
     const gemsToolbar = document.getElementById('gems-toolbar');
+  const viewSwitcher = document.querySelector('.view-switcher') as HTMLElement | null;
 
     if (gemEntries.length === 0) {
       // Reset aggregated data and UI to empty state
@@ -78,6 +79,7 @@ function loadAndDisplayGems(): void {
       if (gemsGrid) gemsGrid.innerHTML = '';
       if (gemsSectionTitle) gemsSectionTitle.style.display = 'none';
       if (gemsToolbar) gemsToolbar.style.display = 'none';
+      if (viewSwitcher) viewSwitcher.style.display = 'none';
       if (skillCrystalContainer) {
         skillCrystalContainer.innerHTML = `
           <div class="empty-state">
@@ -97,6 +99,7 @@ function loadAndDisplayGems(): void {
     // Ensure JD Gems title is visible when we have data
     if (gemsSectionTitle) gemsSectionTitle.style.display = '';
     if (gemsToolbar) gemsToolbar.style.display = '';
+    if (viewSwitcher) viewSwitcher.style.display = '';
 
     // Aggregate skills
     skillData = aggregateSkills(gemEntries);

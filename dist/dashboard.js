@@ -35,11 +35,13 @@ function loadAndDisplayGems() {
     const skillCrystalContainer = document.getElementById("skill-crystal");
     const gemsSectionTitle = document.querySelector(".gems-section h2");
     const gemsToolbar = document.getElementById("gems-toolbar");
+    const viewSwitcher = document.querySelector(".view-switcher");
     if (gemEntries.length === 0) {
       skillData = { hard: /* @__PURE__ */ new Map(), soft: /* @__PURE__ */ new Map() };
       if (gemsGrid) gemsGrid.innerHTML = "";
       if (gemsSectionTitle) gemsSectionTitle.style.display = "none";
       if (gemsToolbar) gemsToolbar.style.display = "none";
+      if (viewSwitcher) viewSwitcher.style.display = "none";
       if (skillCrystalContainer) {
         skillCrystalContainer.innerHTML = `
           <div class="empty-state">
@@ -55,6 +57,7 @@ function loadAndDisplayGems() {
     renderGemsList();
     if (gemsSectionTitle) gemsSectionTitle.style.display = "";
     if (gemsToolbar) gemsToolbar.style.display = "";
+    if (viewSwitcher) viewSwitcher.style.display = "";
     skillData = aggregateSkills(gemEntries);
     renderCurrentView();
   });
