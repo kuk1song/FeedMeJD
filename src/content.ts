@@ -275,6 +275,8 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         '.job-details-jobs-unified-top-card__job-title',
         '.top-card-layout__title',
         'h1.jobs-unified-top-card__job-title',
+        'h1.top-card-layout__title',
+        'h1[data-test-id="job-details-title"]'
       ];
       for (const sel of titleSelectors) {
         const el = document.querySelector(sel);
@@ -300,6 +302,36 @@ if (typeof window.feedMeJdInjected === 'undefined') {
           const c = el.textContent.trim();
           if (c.length > 0 && c.length < 200) { company = c; break; }
         }
+      }
+
+      // Fallback 1: search within top-card container for a company link
+      if (!company) {
+        const topCard = document.querySelector('.jobs-unified-top-card, .top-card-layout, [data-test="job-details"] , .job-details-jobs-unified-top-card');
+        if (topCard) {
+          const link = topCard.querySelector('a[href*="/company/"], a[data-test-job-company-name-link], .topcard__org-name-link');
+          if (link && link.textContent) {
+            const c = link.textContent.trim();
+            if (c.length > 0 && c.length < 200) company = c;
+          }
+        }
+      }
+
+      // Fallback 2: parse JSON-LD for JobPosting.hiringOrganization.name
+      if (!company) {
+        try {
+          const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]')) as HTMLScriptElement[];
+          for (const s of scripts) {
+            const txt = s.textContent || '';
+            if (txt.includes('JobPosting')) {
+              const json = JSON.parse(txt);
+              const name = json?.hiringOrganization?.name || (Array.isArray(json) ? json.find((x:any)=>x['@type']==='JobPosting')?.hiringOrganization?.name : undefined);
+              if (typeof name === 'string' && name.trim()) {
+                company = name.trim();
+                break;
+              }
+            }
+          }
+        } catch {}
       }
 
       return { jobId, title, company, url, timestamp };
