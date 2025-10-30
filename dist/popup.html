@@ -17,8 +17,8 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       width: 320px;
-      min-height: 360px;
-      padding: 16px 16px 18px;
+      min-height: 320px; /* reduce overall height to cut bottom whitespace */
+      padding: 16px 16px 16px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       color: var(--text);
       background:
@@ -36,25 +36,66 @@
       font-weight: 900; background: linear-gradient(135deg, #6c63ff 0%, #7b74ff 100%);
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
-    .hero { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 6px; }
+    .hero { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 6px; }
     .gem-cap {
-      width: 56px; height: 56px; border-radius: 12px;
-      background: #fff; border: 1px solid var(--border); box-shadow: var(--shadow);
+      position: relative;
+      width: 80px; height: 80px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.48));
+      border: 1px solid rgba(15,23,42,0.08);
+      box-shadow: 0 12px 28px rgba(15,23,42,0.10), inset 0 1px 0 rgba(255,255,255,0.7);
       display: grid; place-items: center;
+      overflow: hidden;
+      /* diamond silhouette */
+      clip-path: polygon(50% 0%, 88% 28%, 88% 60%, 50% 100%, 12% 60%, 12% 28%);
     }
-    .gem { width: 36px; height: 36px; object-fit: contain; }
+    /* glass reflections */
+    .gem-cap::before {
+      content: ""; position: absolute; inset: -20% -20% 30% -20%; pointer-events: none;
+      background: linear-gradient(160deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0) 60%);
+      mix-blend-mode: screen;
+      transform: translateY(-6px) rotate(2deg);
+    }
+    .gem-cap::after {
+      content: ""; position: absolute; left: 50%; top: 55%; transform: translate(-50%,-50%);
+      width: 140%; height: 140%; filter: blur(22px); opacity: .18;
+      background: radial-gradient(closest-side, rgba(15,23,42,0.18), transparent 65%);
+      pointer-events: none;
+    }
+    .gem { width: 42px; height: 42px; object-fit: contain; }
     .brand { display:none; }
     .count { font-weight: 800; font-size: 56px; line-height: 1; color: var(--text); animation: count-pop 500ms cubic-bezier(0.34,1.56,0.64,1); text-align: center; }
     @keyframes count-pop { 0%{ transform: scale(.94); opacity:.7 } 100%{ transform: scale(1); opacity:1 } }
     .label { font-size: 13px; color: var(--muted); letter-spacing: 0.2px; margin-top: 2px; text-align: center; }
     .cta {
-      width: 100%; margin-top: 8px; padding: 12px 14px;
-      background: #fff; color: var(--text);
-      border: 1px solid var(--border); border-radius: 12px;
-      font-weight: 700; font-size: 15px; letter-spacing: 0.1px; cursor: pointer;
-      box-shadow: var(--shadow); transition: transform .16s ease, box-shadow .16s ease;
+      width: 100%; margin-top: 12px; padding: 13px 16px;
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.18));
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(15,23,42,0.10);
+      border-radius: 14px;
+      font-weight: 800; font-size: 16px; letter-spacing: 0.2px; cursor: pointer;
+      box-shadow: 0 12px 28px rgba(15,23,42,0.10);
+      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+      position: relative; overflow: hidden;
     }
-    .cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+    /* gradient border via mask */
+    .cta::after {
+      content: ""; position: absolute; inset: 0; border-radius: 14px; padding: 1px;
+      background: linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.06));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events: none;
+    }
+    /* sheen swipe */
+    .cta::before {
+      content: ""; position: absolute; left: -30%; top: -120%; width: 70%; height: 300%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.45), rgba(255,255,255,0) 60%);
+      transform: rotate(20deg);
+      transition: left .45s ease;
+      pointer-events: none;
+    }
+    .cta:hover { transform: translateY(-1px); box-shadow: 0 16px 34px rgba(15,23,42,0.16); border-color: rgba(15,23,42,0.16); }
+    .cta:hover::before { left: 120%; }
     .cta:active { transform: translateY(0); }
     @media (prefers-reduced-motion: reduce) { .count { animation: none; } }
   </style>
