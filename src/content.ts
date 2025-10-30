@@ -490,8 +490,8 @@ if (typeof window.feedMeJdInjected === 'undefined') {
           chrome.storage.local.set({ analyzedJobs }, () => {
             console.log(`FeedMeJD: Job ${jobId} marked as analyzed.`);
           });
-        }
-      });
+    }
+  });
 }
 
     public cleanup(): void {
