@@ -18,22 +18,22 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupViewSwitcher() {
   const constellationBtn = document.getElementById("constellation-view-btn");
   const prismBtn = document.getElementById("prism-view-btn");
-  constellationBtn.addEventListener("click", () => {
-    if (currentView !== "constellation") {
-      currentView = "constellation";
-      constellationBtn.classList.add("active");
-      prismBtn.classList.remove("active");
-      renderCurrentView();
-    }
-  });
-  prismBtn.addEventListener("click", () => {
-    if (currentView !== "prism") {
-      currentView = "prism";
-      prismBtn.classList.add("active");
-      constellationBtn.classList.remove("active");
-      renderCurrentView();
-    }
-  });
+  const galaxyBtn = document.getElementById("galaxy-view-btn");
+  if (!constellationBtn || !prismBtn || !galaxyBtn) return;
+  const updateActiveClasses = (view) => {
+    constellationBtn.classList.toggle("active", view === "constellation");
+    prismBtn.classList.toggle("active", view === "prism");
+    galaxyBtn.classList.toggle("active", view === "galaxy");
+  };
+  const handleSwitch = (view) => {
+    if (currentView === view) return;
+    currentView = view;
+    updateActiveClasses(view);
+    renderCurrentView();
+  };
+  constellationBtn.addEventListener("click", () => handleSwitch("constellation"));
+  prismBtn.addEventListener("click", () => handleSwitch("prism"));
+  galaxyBtn.addEventListener("click", () => handleSwitch("galaxy"));
 }
 function loadAndDisplayGems() {
   chrome.storage.local.get(null, (items) => {
@@ -221,8 +221,10 @@ function buildSkillGalaxyData(gemEntries, hardMap, softMap) {
 function renderCurrentView() {
   if (currentView === "constellation") {
     renderConstellationView();
-  } else {
+  } else if (currentView === "prism") {
     renderPrismView();
+  } else {
+    renderGalaxyView();
   }
 }
 function renderConstellationView() {
@@ -631,4 +633,17 @@ ${message}`));
     document.addEventListener("keydown", onKey);
     if (okBtn) setTimeout(() => okBtn.focus(), 0);
   });
+}
+function renderGalaxyView() {
+  const container = document.getElementById("skill-crystal");
+  if (!container) return;
+  container.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 20px;text-align:center;color:#475569;">
+      <div style="font-size:42px;">🛠️</div>
+      <div style="font-size:18px;font-weight:700;">Galaxy view is loading</div>
+      <div style="font-size:14px;max-width:420px;line-height:1.6;color:#64748b;">
+        The dynamic network visualization is under construction. Stay tuned for a live force-directed skill map soon.
+      </div>
+    </div>
+  `;
 }
