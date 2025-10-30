@@ -58,21 +58,28 @@
     }
     .gem-cap::after {
       content: ""; position: absolute; left: 50%; top: 55%; transform: translate(-50%,-50%);
-      width: 140%; height: 140%; filter: blur(22px); opacity: .18;
-      background: radial-gradient(closest-side, rgba(15,23,42,0.18), transparent 65%);
+      width: 140%; height: 140%; filter: blur(22px); opacity: .16;
+      background: radial-gradient(closest-side, rgba(56,189,248,0.22), rgba(56,189,248,0) 65%);
       pointer-events: none;
     }
+    /* cyan aura behind gem */
+    .gem-cap .aura {
+      position: absolute; inset: -25% -20% -20% -20%; border-radius: 16px; pointer-events: none; clip-path: inherit; z-index: 1;
+      background: radial-gradient(closest-side, rgba(56,189,248,0.28), rgba(56,189,248,0) 65%);
+      filter: blur(16px); opacity: .35; animation: glowPulseCyan 3.8s ease-in-out infinite alternate;
+    }
+    @keyframes glowPulseCyan { 0%{ opacity: .28 } 100%{ opacity: .45 } }
     /* subtle facet overlay */
     .gem-cap .facet {
-      position: absolute; inset: -10%; pointer-events: none;
+      position: absolute; inset: -10%; pointer-events: none; z-index: 3;
       background:
         conic-gradient(from 0deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 40%, rgba(255,255,255,0.12)),
         repeating-linear-gradient(45deg, rgba(15,23,42,0.06) 0 2px, rgba(15,23,42,0) 2px 10px);
       mix-blend-mode: overlay; opacity: .25; clip-path: inherit;
     }
     @keyframes sheen-slow { 0%{ transform: translateY(-8px) rotate(2deg);} 100%{ transform: translateY(2px) rotate(-2deg);} }
-    .gem { width: 48px; height: 48px; object-fit: contain; animation: float 5s ease-in-out infinite; }
-    @keyframes float { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-4px) } }
+    .gem { position: relative; z-index: 2; width: 48px; height: 48px; object-fit: contain; animation: float 3.6s ease-in-out infinite; }
+    @keyframes float { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-5px) } }
     .brand { display:none; }
     .count { font-weight: 800; font-size: 56px; line-height: 1; color: var(--text); animation: count-pop 500ms cubic-bezier(0.34,1.56,0.64,1); text-align: center; margin-top: -2px; }
     @keyframes count-pop { 0%{ transform: scale(.94); opacity:.7 } 100%{ transform: scale(1); opacity:1 } }
@@ -109,7 +116,7 @@
     .cta:hover::before { left: 120%; }
     .cta:active { transform: translateY(0); }
     /* inner pieces for glow/shine/facet */
-    .cta .glow { position: absolute; inset: -20% -10%; z-index: 0; pointer-events: none; border-radius: 14px; background: radial-gradient(60% 120% at 50% 120%, rgba(56,189,248,0.22), rgba(56,189,248,0) 60%); filter: blur(12px); animation: glowPulse 4.5s ease-in-out infinite; }
+    .cta .glow { position: absolute; inset: -20% -10%; z-index: 0; pointer-events: none; border-radius: 14px; background: radial-gradient(60% 120% at 50% 120%, rgba(56,189,248,0), rgba(56,189,248,0) 60%); filter: blur(12px); }
     @keyframes glowPulse { 0%{ opacity:.25 } 50%{ opacity:.45 } 100%{ opacity:.25 } }
     .cta .shine { position: absolute; left: -40%; top: -150%; width: 70%; height: 340%; transform: rotate(18deg); background: linear-gradient(120deg, rgba(255,255,255,0.55), rgba(255,255,255,0.0) 60%); filter: blur(2px); pointer-events: none; animation: sweep 5.2s ease-in-out infinite; }
     @keyframes sweep { 0%{ left:-40% } 100%{ left:120% } }
@@ -131,6 +138,7 @@
     </div>
     <div class="hero">
       <div class="gem-cap">
+        <span class="aura"></span>
         <span class="facet"></span>
         <img src="images/gem.png" class="gem" alt="Gem">
       </div>
