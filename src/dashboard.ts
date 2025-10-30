@@ -20,9 +20,27 @@ interface SkillData {
   soft: Map<string, number>;
 }
 
+interface SkillNode {
+  id: string;
+  type: 'hard' | 'soft';
+  count: number;
+}
+
+interface SkillLink {
+  source: string;
+  target: string;
+  strength: number;
+}
+
+interface SkillGalaxyData {
+  nodes: SkillNode[];
+  links: SkillLink[];
+}
+
 // Current view state
 let currentView: 'constellation' | 'prism' = 'constellation';
 let skillData: SkillData = { hard: new Map(), soft: new Map() };
+let skillGalaxy: SkillGalaxyData = { nodes: [], links: [] };
 let allGems: [string, Gem][] = [];
 let currentSearch = '';
 let currentSort: 'newest' | 'oldest' | 'title' = 'newest';
@@ -222,6 +240,10 @@ function gemTimestamp(gemId: string, gem: Gem): number {
   return m ? Number(m[1]) : 0;
 }
 
+function normalizeSkillName(skill: string): string {
+  return skill.trim().toLowerCase();
+}
+
 /**
  * Aggregates all skills from gems, keeping hard and soft separate.
  */
@@ -232,18 +254,70 @@ function aggregateSkills(gemEntries: [string, any][]): SkillData {
   gemEntries.forEach(([_, gemData]: [string, Gem]) => {
     // Count hard skills
     gemData.skills.hard.forEach(skill => {
-      const normalized = skill.toLowerCase().trim();
+      const normalized = normalizeSkillName(skill);
+      if (!normalized) return;
       hard.set(normalized, (hard.get(normalized) || 0) + 1);
     });
     
     // Count soft skills
     gemData.skills.soft.forEach(skill => {
-      const normalized = skill.toLowerCase().trim();
+      const normalized = normalizeSkillName(skill);
+      if (!normalized) return;
       soft.set(normalized, (soft.get(normalized) || 0) + 1);
     });
   });
   
+  skillGalaxy = buildSkillGalaxyData(gemEntries, hard, soft);
   return { hard, soft };
+}
+
+function buildSkillGalaxyData(
+  gemEntries: [string, Gem][],
+  hardMap: Map<string, number>,
+  softMap: Map<string, number>
+): SkillGalaxyData {
+  const nodes: SkillNode[] = [];
+  const typeBySkill = new Map<string, SkillNode['type']>();
+
+  hardMap.forEach((count, skill) => {
+    nodes.push({ id: skill, type: 'hard', count });
+    typeBySkill.set(skill, 'hard');
+  });
+
+  softMap.forEach((count, skill) => {
+    nodes.push({ id: skill, type: 'soft', count });
+    typeBySkill.set(skill, 'soft');
+  });
+
+  const linkCounts = new Map<string, number>();
+
+  gemEntries.forEach(([_, gemData]) => {
+    const normalizedHard = gemData.skills.hard.map(normalizeSkillName).filter(Boolean);
+    const normalizedSoft = gemData.skills.soft.map(normalizeSkillName).filter(Boolean);
+    const combined = Array.from(new Set([...normalizedHard, ...normalizedSoft]));
+
+    for (let i = 0; i < combined.length; i++) {
+      for (let j = i + 1; j < combined.length; j++) {
+        const a = combined[i];
+        const b = combined[j];
+        if (!a || !b) continue;
+        const key = a < b ? `${a}||${b}` : `${b}||${a}`;
+        linkCounts.set(key, (linkCounts.get(key) || 0) + 1);
+      }
+    }
+  });
+
+  const links: SkillLink[] = [];
+  linkCounts.forEach((count, key) => {
+    if (count <= 0) return;
+    const [source, target] = key.split('||');
+    if (!typeBySkill.has(source) || !typeBySkill.has(target)) {
+      return;
+    }
+    links.push({ source, target, strength: count });
+  });
+
+  return { nodes, links };
 }
 
 /**

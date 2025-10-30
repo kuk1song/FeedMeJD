@@ -160,20 +160,63 @@ function gemTimestamp(gemId, gem) {
   const m = gemId.match(/gem_(\d+)/);
   return m ? Number(m[1]) : 0;
 }
+function normalizeSkillName(skill) {
+  return skill.trim().toLowerCase();
+}
 function aggregateSkills(gemEntries) {
   const hard = /* @__PURE__ */ new Map();
   const soft = /* @__PURE__ */ new Map();
   gemEntries.forEach(([_, gemData]) => {
     gemData.skills.hard.forEach((skill) => {
-      const normalized = skill.toLowerCase().trim();
+      const normalized = normalizeSkillName(skill);
+      if (!normalized) return;
       hard.set(normalized, (hard.get(normalized) || 0) + 1);
     });
     gemData.skills.soft.forEach((skill) => {
-      const normalized = skill.toLowerCase().trim();
+      const normalized = normalizeSkillName(skill);
+      if (!normalized) return;
       soft.set(normalized, (soft.get(normalized) || 0) + 1);
     });
   });
+  buildSkillGalaxyData(gemEntries, hard, soft);
   return { hard, soft };
+}
+function buildSkillGalaxyData(gemEntries, hardMap, softMap) {
+  const nodes = [];
+  const typeBySkill = /* @__PURE__ */ new Map();
+  hardMap.forEach((count, skill) => {
+    nodes.push({ id: skill, type: "hard", count });
+    typeBySkill.set(skill, "hard");
+  });
+  softMap.forEach((count, skill) => {
+    nodes.push({ id: skill, type: "soft", count });
+    typeBySkill.set(skill, "soft");
+  });
+  const linkCounts = /* @__PURE__ */ new Map();
+  gemEntries.forEach(([_, gemData]) => {
+    const normalizedHard = gemData.skills.hard.map(normalizeSkillName).filter(Boolean);
+    const normalizedSoft = gemData.skills.soft.map(normalizeSkillName).filter(Boolean);
+    const combined = Array.from(/* @__PURE__ */ new Set([...normalizedHard, ...normalizedSoft]));
+    for (let i = 0; i < combined.length; i++) {
+      for (let j = i + 1; j < combined.length; j++) {
+        const a = combined[i];
+        const b = combined[j];
+        if (!a || !b) continue;
+        const key = a < b ? `${a}||${b}` : `${b}||${a}`;
+        linkCounts.set(key, (linkCounts.get(key) || 0) + 1);
+      }
+    }
+  });
+  const links = [];
+  linkCounts.forEach((count, key) => {
+    if (count <= 0) return;
+    const [source, target] = key.split("||");
+    if (!typeBySkill.has(source) || !typeBySkill.has(target)) {
+      return;
+    }
+    links.push({ source, target, strength: count });
+  });
+  return { nodes, links };
 }
 function renderCurrentView() {
   if (currentView === "constellation") {
