@@ -4276,7 +4276,7 @@ function renderWordCloud(container, words, options = {}) {
     texts.transition().duration(600).delay((_d, i) => i * 30).style("opacity", 1).ease(quadOut);
   }
 }
-let currentView = "constellation";
+let currentView = "wordcloud";
 let skillData = { hard: /* @__PURE__ */ new Map(), soft: /* @__PURE__ */ new Map() };
 let skillGalaxy = { nodes: [], links: [] };
 let allGems = [];
@@ -4300,7 +4300,7 @@ function setupViewSwitcher() {
   const galaxyBtn = document.getElementById("galaxy-view-btn");
   const wordcloudBtn = document.getElementById("wordcloud-view-btn");
   if (!constellationBtn || !prismBtn || !galaxyBtn || !wordcloudBtn) return;
-  constellationBtn.classList.add("active");
+  wordcloudBtn.classList.add("active");
   const updateActiveClasses = (view) => {
     constellationBtn.classList.toggle("active", view === "constellation");
     prismBtn.classList.toggle("active", view === "prism");

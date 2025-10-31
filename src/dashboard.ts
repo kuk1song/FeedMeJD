@@ -15,7 +15,7 @@ const GALAXY_VIEW_ENABLED = true;
 type SkillView = 'constellation' | 'prism' | 'galaxy' | 'wordcloud';
 
 // Current view state
-let currentView: SkillView = 'constellation';
+let currentView: SkillView = 'wordcloud';
 let skillData: SkillData = { hard: new Map(), soft: new Map() };
 let skillGalaxy: SkillGalaxyData = { nodes: [], links: [] };
 let allGems: [string, Gem][] = [];
@@ -46,7 +46,7 @@ function setupViewSwitcher(): void {
 
   if (!constellationBtn || !prismBtn || !galaxyBtn || !wordcloudBtn) return;
 
-  constellationBtn.classList.add('active');
+  wordcloudBtn.classList.add('active');
 
   const updateActiveClasses = (view: SkillView) => {
     constellationBtn.classList.toggle('active', view === 'constellation');
