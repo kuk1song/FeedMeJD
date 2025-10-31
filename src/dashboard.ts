@@ -335,6 +335,27 @@ function renderConstellationView(): void {
   const container = document.getElementById('skill-crystal')!;
   container.innerHTML = '';
   
+  // Create tooltip element (similar to Galaxy's inline tooltip but as HTML)
+  const tooltip = document.createElement('div');
+  tooltip.style.cssText = `
+    position: absolute;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #f8fafc;
+    background: rgba(15, 23, 42, 0.92);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    white-space: nowrap;
+    z-index: 100;
+    transform: translate(-50%, -100%);
+    margin-top: -12px;
+  `;
+  container.appendChild(tooltip);
+  
   const cloudContainer = document.createElement('div');
   cloudContainer.style.cssText = `
     display: flex;
@@ -344,6 +365,7 @@ function renderConstellationView(): void {
     gap: 12px;
     padding: 20px;
     width: 100%;
+    position: relative;
   `;
   
   // Combine all skills and sort by frequency
@@ -364,9 +386,8 @@ function renderConstellationView(): void {
     // Color based on type
     const baseColor = type === 'hard' ? '#667eea' : '#ffa500';
     const bgColor = type === 'hard' ? 'rgba(102, 126, 234, 0.1)' : 'rgba(255, 165, 0, 0.1)';
-    
+
     skillElement.textContent = skill;
-    skillElement.title = `${skill}: Found in ${count} job${count > 1 ? 's' : ''} (${type === 'hard' ? 'Hard Skill' : 'Soft Skill'})`;
     skillElement.style.cssText = `
       font-size: ${fontSize}px;
       font-weight: 600;
@@ -377,17 +398,39 @@ function renderConstellationView(): void {
       transition: all 0.2s ease;
       cursor: default;
       user-select: none;
+      position: relative;
     `;
     
-    // Hover effect with count tooltip
-    skillElement.addEventListener('mouseenter', () => {
+    const tooltipLabel = `${skill} · ${count} mention${count > 1 ? 's' : ''}`;
+    
+    // Hover effect with immediate tooltip (Galaxy style)
+    skillElement.addEventListener('mouseenter', (e: MouseEvent) => {
       skillElement.style.transform = 'scale(1.1)';
       skillElement.style.boxShadow = `0 4px 12px ${type === 'hard' ? 'rgba(102, 126, 234, 0.3)' : 'rgba(255, 165, 0, 0.3)'}`;
+      
+      // Show tooltip immediately
+      tooltip.textContent = tooltipLabel;
+      tooltip.style.opacity = '1';
+      
+      // Position tooltip above the skill element
+      const rect = skillElement.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      tooltip.style.left = `${rect.left + rect.width / 2 - containerRect.left}px`;
+      tooltip.style.top = `${rect.top - containerRect.top}px`;
     });
     
+    skillElement.addEventListener('mousemove', (e: MouseEvent) => {
+      // Update tooltip position on mouse move
+      const rect = skillElement.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      tooltip.style.left = `${rect.left + rect.width / 2 - containerRect.left}px`;
+      tooltip.style.top = `${rect.top - containerRect.top}px`;
+    });
+
     skillElement.addEventListener('mouseleave', () => {
       skillElement.style.transform = 'scale(1)';
       skillElement.style.boxShadow = 'none';
+      tooltip.style.opacity = '0';
     });
     
     cloudContainer.appendChild(skillElement);

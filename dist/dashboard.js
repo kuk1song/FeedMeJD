@@ -4003,6 +4003,25 @@ function renderCurrentView() {
 function renderConstellationView() {
   const container = document.getElementById("skill-crystal");
   container.innerHTML = "";
+  const tooltip = document.createElement("div");
+  tooltip.style.cssText = `
+    position: absolute;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #f8fafc;
+    background: rgba(15, 23, 42, 0.92);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    white-space: nowrap;
+    z-index: 100;
+    transform: translate(-50%, -100%);
+    margin-top: -12px;
+  `;
+  container.appendChild(tooltip);
   const cloudContainer = document.createElement("div");
   cloudContainer.style.cssText = `
     display: flex;
@@ -4012,6 +4031,7 @@ function renderConstellationView() {
     gap: 12px;
     padding: 20px;
     width: 100%;
+    position: relative;
   `;
   const allSkills = [];
   skillData.hard.forEach((count, skill) => allSkills.push([skill, count, "hard"]));
@@ -4024,7 +4044,6 @@ function renderConstellationView() {
     const baseColor = type === "hard" ? "#667eea" : "#ffa500";
     const bgColor = type === "hard" ? "rgba(102, 126, 234, 0.1)" : "rgba(255, 165, 0, 0.1)";
     skillElement.textContent = skill;
-    skillElement.title = `${skill}: Found in ${count} job${count > 1 ? "s" : ""} (${type === "hard" ? "Hard Skill" : "Soft Skill"})`;
     skillElement.style.cssText = `
       font-size: ${fontSize}px;
       font-weight: 600;
@@ -4035,14 +4054,29 @@ function renderConstellationView() {
       transition: all 0.2s ease;
       cursor: default;
       user-select: none;
+      position: relative;
     `;
-    skillElement.addEventListener("mouseenter", () => {
+    const tooltipLabel = `${skill} · ${count} mention${count > 1 ? "s" : ""}`;
+    skillElement.addEventListener("mouseenter", (e) => {
       skillElement.style.transform = "scale(1.1)";
       skillElement.style.boxShadow = `0 4px 12px ${type === "hard" ? "rgba(102, 126, 234, 0.3)" : "rgba(255, 165, 0, 0.3)"}`;
+      tooltip.textContent = tooltipLabel;
+      tooltip.style.opacity = "1";
+      const rect = skillElement.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      tooltip.style.left = `${rect.left + rect.width / 2 - containerRect.left}px`;
+      tooltip.style.top = `${rect.top - containerRect.top}px`;
+    });
+    skillElement.addEventListener("mousemove", (e) => {
+      const rect = skillElement.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      tooltip.style.left = `${rect.left + rect.width / 2 - containerRect.left}px`;
+      tooltip.style.top = `${rect.top - containerRect.top}px`;
     });
     skillElement.addEventListener("mouseleave", () => {
       skillElement.style.transform = "scale(1)";
       skillElement.style.boxShadow = "none";
+      tooltip.style.opacity = "0";
     });
     cloudContainer.appendChild(skillElement);
   });
