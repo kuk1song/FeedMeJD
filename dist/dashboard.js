@@ -20,10 +20,15 @@ function setupViewSwitcher() {
   const prismBtn = document.getElementById("prism-view-btn");
   const galaxyBtn = document.getElementById("galaxy-view-btn");
   if (!constellationBtn || !prismBtn || !galaxyBtn) return;
+  constellationBtn.classList.add("active");
   const updateActiveClasses = (view) => {
     constellationBtn.classList.toggle("active", view === "constellation");
     prismBtn.classList.toggle("active", view === "prism");
     galaxyBtn.classList.toggle("active", view === "galaxy");
+    {
+      galaxyBtn.classList.toggle("disabled", true);
+      galaxyBtn.setAttribute("title", "Galaxy view is under construction");
+    }
   };
   const handleSwitch = (view) => {
     if (currentView === view) return;
@@ -34,6 +39,7 @@ function setupViewSwitcher() {
   constellationBtn.addEventListener("click", () => handleSwitch("constellation"));
   prismBtn.addEventListener("click", () => handleSwitch("prism"));
   galaxyBtn.addEventListener("click", () => handleSwitch("galaxy"));
+  updateActiveClasses(currentView);
 }
 function loadAndDisplayGems() {
   chrome.storage.local.get(null, (items) => {
@@ -224,7 +230,9 @@ function renderCurrentView() {
   } else if (currentView === "prism") {
     renderPrismView();
   } else {
-    renderGalaxyView();
+    {
+      renderGalaxyPlaceholder();
+    }
   }
 }
 function renderConstellationView() {
@@ -634,7 +642,7 @@ ${message}`));
     if (okBtn) setTimeout(() => okBtn.focus(), 0);
   });
 }
-function renderGalaxyView() {
+function renderGalaxyPlaceholder() {
   const container = document.getElementById("skill-crystal");
   if (!container) return;
   container.innerHTML = `

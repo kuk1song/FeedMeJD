@@ -37,8 +37,12 @@ interface SkillGalaxyData {
   links: SkillLink[];
 }
 
+const GALAXY_VIEW_ENABLED = false;
+
+type SkillView = 'constellation' | 'prism' | 'galaxy';
+
 // Current view state
-let currentView: 'constellation' | 'prism' | 'galaxy' = 'constellation';
+let currentView: SkillView = 'constellation';
 let skillData: SkillData = { hard: new Map(), soft: new Map() };
 let skillGalaxy: SkillGalaxyData = { nodes: [], links: [] };
 let allGems: [string, Gem][] = [];
@@ -68,13 +72,24 @@ function setupViewSwitcher(): void {
 
   if (!constellationBtn || !prismBtn || !galaxyBtn) return;
 
-  const updateActiveClasses = (view: typeof currentView) => {
+  constellationBtn.classList.add('active');
+
+  const updateActiveClasses = (view: SkillView) => {
     constellationBtn.classList.toggle('active', view === 'constellation');
     prismBtn.classList.toggle('active', view === 'prism');
     galaxyBtn.classList.toggle('active', view === 'galaxy');
+
+    // If Galaxy is disabled, give visual hint but keep button accessible.
+    if (!GALAXY_VIEW_ENABLED) {
+      galaxyBtn.classList.toggle('disabled', true);
+      galaxyBtn.setAttribute('title', 'Galaxy view is under construction');
+    } else {
+      galaxyBtn.classList.remove('disabled');
+      galaxyBtn.setAttribute('title', 'View skills as a dynamic network');
+    }
   };
 
-  const handleSwitch = (view: typeof currentView) => {
+  const handleSwitch = (view: SkillView) => {
     if (currentView === view) return;
     currentView = view;
     updateActiveClasses(view);
@@ -84,6 +99,8 @@ function setupViewSwitcher(): void {
   constellationBtn.addEventListener('click', () => handleSwitch('constellation'));
   prismBtn.addEventListener('click', () => handleSwitch('prism'));
   galaxyBtn.addEventListener('click', () => handleSwitch('galaxy'));
+
+  updateActiveClasses(currentView);
 }
 
 /**
@@ -331,7 +348,11 @@ function renderCurrentView(): void {
   } else if (currentView === 'prism') {
     renderPrismView();
   } else {
-    renderGalaxyView();
+    if (GALAXY_VIEW_ENABLED) {
+      renderGalaxyView();
+    } else {
+      renderGalaxyPlaceholder();
+    }
   }
 }
 
@@ -858,9 +879,9 @@ function showConfirmModal(title: string, message: string): Promise<boolean> {
 }
 
 /**
- * Placeholder renderer for the forthcoming Galaxy view.
+ * Placeholder renderer while the Galaxy view is under construction.
  */
-function renderGalaxyView(): void {
+function renderGalaxyPlaceholder(): void {
   const container = document.getElementById('skill-crystal');
   if (!container) return;
 
@@ -873,4 +894,11 @@ function renderGalaxyView(): void {
       </div>
     </div>
   `;
+}
+
+/**
+ * Renders the Galaxy view (will be replaced with the actual implementation).
+ */
+function renderGalaxyView(): void {
+  renderGalaxyPlaceholder();
 }
