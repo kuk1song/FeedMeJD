@@ -23,7 +23,7 @@
       color: var(--text);
       background:
         /* Visible matte texture (dot grid) */
-        radial-gradient(circle at center, rgba(15,23,42,0.055) 1px, transparent 1px),
+        radial-gradient(circle at center, rgba(15,23,42,0.055) 1px, transparent 1.3px),
         /* Cross-hatch for refined fabric feel */
         repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(15,23,42,0.008) 2px, rgba(15,23,42,0.008) 4px),
         repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(15,23,42,0.008) 2px, rgba(15,23,42,0.008) 4px),
@@ -32,29 +32,12 @@
         radial-gradient(120px 120px at 88% 10%, rgba(167,139,250,0.05), transparent 62%),
         #fafbfc; /* Very subtle cool gray, not yellow */
       background-size: 5px 5px, 4px 4px, 4px 4px, auto, auto, auto;
-      position: relative;
-      overflow: hidden;
-    }
-    /* Frosted glass highlight (more visible contrast) */
-    body::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: 
-        radial-gradient(ellipse 200px 160px at 45% 25%, rgba(255,255,255,0.35), transparent 60%),
-        radial-gradient(ellipse 140px 100px at 75% 75%, rgba(255,255,255,0.2), transparent 55%);
-      pointer-events: none;
-      mix-blend-mode: soft-light;
-      opacity: 0.8;
-      z-index: 0;
     }
     .wrap { 
       display: flex; 
       flex-direction: column; 
       align-items: stretch; 
       gap: 10px;
-      position: relative;
-      z-index: 1;
     }
     .hdr { display: flex; align-items: center; justify-content: flex-start; padding: 2px 2px 6px 2px; }
     .wordmark {
@@ -69,38 +52,8 @@
     .gem-cap {
       position: relative;
       width: 88px; height: 88px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.48));
-      border: 1px solid rgba(15,23,42,0.08);
-      box-shadow: 0 12px 28px rgba(15,23,42,0.10), inset 0 1px 0 rgba(255,255,255,0.7);
       display: grid; place-items: center;
-      overflow: hidden;
-      /* diamond silhouette */
-      clip-path: polygon(50% 0%, 88% 28%, 88% 60%, 50% 100%, 12% 60%, 12% 28%);
     }
-    /* glass reflections */
-    .gem-cap::before {
-      content: ""; position: absolute; inset: -20% -20% 30% -20%; pointer-events: none;
-      background: linear-gradient(160deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0) 60%);
-      mix-blend-mode: screen;
-      transform: translateY(-6px) rotate(2deg);
-      animation: sheen-slow 6s ease-in-out infinite alternate;
-    }
-    .gem-cap::after {
-      content: ""; position: absolute; left: 50%; top: 55%; transform: translate(-50%,-50%);
-      width: 140%; height: 140%; filter: blur(22px); opacity: .18;
-      background: radial-gradient(closest-side, rgba(15,23,42,0.18), transparent 65%);
-      pointer-events: none;
-    }
-    
-    /* subtle facet overlay */
-    .gem-cap .facet {
-      position: absolute; inset: -10%; pointer-events: none; z-index: 3;
-      background:
-        conic-gradient(from 0deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 40%, rgba(255,255,255,0.12)),
-        repeating-linear-gradient(45deg, rgba(15,23,42,0.06) 0 2px, rgba(15,23,42,0) 2px 10px);
-      mix-blend-mode: overlay; opacity: .25; clip-path: inherit;
-    }
-    @keyframes sheen-slow { 0%{ transform: translateY(-8px) rotate(2deg);} 100%{ transform: translateY(2px) rotate(-2deg);} }
     .gem { position: relative; z-index: 2; width: 48px; height: 48px; object-fit: contain; animation: float 3.6s ease-in-out infinite; }
     @keyframes float { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-5px) } }
     .brand { display:none; }
@@ -161,7 +114,6 @@
     </div>
     <div class="hero">
       <div class="gem-cap">
-        <span class="facet"></span>
         <img src="images/gem.png" class="gem" alt="Gem">
       </div>
       <div class="caustic"></div>
