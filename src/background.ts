@@ -24,7 +24,7 @@ interface PersistedGem extends AnalysisResult {
 chrome.runtime.onMessage.addListener(
   (request: { type: string, text?: string, meta?: any }, sender, sendResponse) => {
   if (request.type === "ANALYZE_JD") {
-      console.log("FeedMeJD: Received JD to analyze.");
+      // console.log("FeedMeJD: Received JD to analyze.");
       
       handleAIAnalysis(request.text!, request.meta)
         .then(result => sendResponse({ success: true, data: result }))
@@ -35,7 +35,7 @@ chrome.runtime.onMessage.addListener(
       
       return true; // Indicates asynchronous response
     } else if (request.type === "OPEN_DASHBOARD") {
-      console.log("FeedMeJD: Opening dashboard");
+      // console.log("FeedMeJD: Opening dashboard");
       openOrSwitchToDashboard();
       sendResponse({ success: true });
       return false;
@@ -66,16 +66,12 @@ function openOrSwitchToDashboard(): void {
   });
 }
 
-// --- Background "Air Traffic Controller" ---
-// This is the core of our new programmatic injection logic.
+// Programmatic content script injection for LinkedIn jobs pages
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // We are only interested in URL changes for LinkedIn tabs.
   if (changeInfo.status === 'complete' && tab.url && tab.url.includes("linkedin.com")) {
     
-    // If it's a jobs page, inject the UI.
     if (tab.url.includes("linkedin.com/jobs")) {
       console.log(`FeedMeJD: Detected navigation to a jobs page: ${tab.url}`);
-      // Inject the content script and its CSS.
       chrome.scripting.insertCSS({
         target: { tabId: tabId },
         files: ["assets/content.css"]
@@ -84,15 +80,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         target: { tabId: tabId },
         files: ["content.js"]
       });
-    } 
-    // If it's another LinkedIn page, send a message to unload the UI.
-    else {
-      console.log(`FeedMeJD: Navigated away from jobs page. Sending unload command.`);
+    } else {
+      // console.log(`FeedMeJD: Navigated away from jobs page. Sending unload command.`);
       chrome.tabs.sendMessage(tabId, { type: "UNLOAD_PET_UI" }, (response) => {
-        // This callback is used to handle the case where the content script
-        // was never injected, preventing an error message in the console.
+        // Silently handle case where no content script exists
         if (chrome.runtime.lastError) {
-          /* console.log("FeedMeJD: No active content script to unload, which is expected."); */
+          // Expected when content script was never injected
         }
       });
     }
@@ -100,14 +93,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 /**
- * Performs AI analysis and saves the result.
- * @param {string} text The job description text.
- * @returns {Promise<AnalysisResult>} The analysis result.
- */
-/**
  * Detects and returns the correct LanguageModel API factory from the environment.
  * Supports multiple API naming conventions for maximum compatibility.
- * IMPORTANT: In Service Worker context, use global LanguageModel or self.LanguageModel.
  */
 function getLanguageModelFactory(): AILanguageModelFactory | null {
   // Service Worker environment: Try global LanguageModel first
@@ -140,8 +127,10 @@ function getLanguageModelFactory(): AILanguageModelFactory | null {
   return null;
 }
 
+/**
+ * Performs AI analysis and saves the result.
+ */
 async function handleAIAnalysis(text: string, meta?: any): Promise<PersistedGem> {
-  // Step 1: Detect the correct API
   const languageModelAPI = getLanguageModelFactory();
   
   if (!languageModelAPI) {
@@ -150,38 +139,30 @@ async function handleAIAnalysis(text: string, meta?: any): Promise<PersistedGem>
     throw new Error("AI_UNAVAILABLE");
   }
 
-  // Step 2: Check the availability of the AI model
-  console.log("FeedMeJD: Checking AI model availability...");
+  // console.log("FeedMeJD: Checking AI model availability...");
   const availability = await languageModelAPI.availability();
   
   console.log(`FeedMeJD: AI availability status: ${availability}`);
   
-  // Handle both old and new API return values for maximum compatibility
   const availabilityLower = String(availability).toLowerCase();
   
   if (availabilityLower === 'readily' || availabilityLower === 'available') {
-    // Model is ready, continue to the analysis.
-    console.log("FeedMeJD: AI model is readily available.");
+    // console.log("FeedMeJD: AI model is readily available.");
   } else if (availabilityLower === 'after-download' || availabilityLower === 'downloadable' || availabilityLower === 'downloading') {
-    // Model needs to be downloaded or is currently downloading.
-    console.log(`FeedMeJD: AI model status: ${availability}. Attempting to trigger download...`);
-    // Don't throw error - try to create session anyway, which will trigger download
-    console.log("FeedMeJD: Proceeding to create session (this will trigger download if needed)...");
+    // console.log(`FeedMeJD: AI model status: ${availability}. Attempting to trigger download...`);
+    // console.log("FeedMeJD: Proceeding to create session (this will trigger download if needed)...");
   } else if (availabilityLower === 'no' || availabilityLower === 'unavailable') {
-    // The device does not meet the requirements.
     console.error("FeedMeJD: AI model is not supported on this device.");
     throw new Error("AI_UNAVAILABLE");
   } else {
-    // Unknown status
     console.warn(`FeedMeJD: Unknown availability status: ${availability}. Attempting to proceed...`);
   }
 
-  console.log("FeedMeJD: Creating AI language model session...");
+  // console.log("FeedMeJD: Creating AI language model session...");
   
   let downloadStarted = false;
   
   const session = await languageModelAPI.create({
-    // Specify expected output language to ensure optimal quality and safety
     monitor(m) {
       m.addEventListener("downloadprogress", (e) => {
         if (!downloadStarted) {
@@ -193,8 +174,8 @@ async function handleAIAnalysis(text: string, meta?: any): Promise<PersistedGem>
     }
   });
 
-  console.log("FeedMeJD: Session created successfully!");
-  console.log("FeedMeJD: Prompting AI model...");
+  // console.log("FeedMeJD: Session created successfully!");
+  // console.log("FeedMeJD: Prompting AI model...");
 
   const prompt = `
     Analyze the following job description text.
@@ -220,8 +201,7 @@ async function handleAIAnalysis(text: string, meta?: any): Promise<PersistedGem>
 
   const aiResponse = await session.prompt(prompt);
   
-  // Clean the response to ensure it's a valid JSON
-  // The model sometimes wraps the JSON in ```json ... ```
+  // The model sometimes wraps JSON in ```json ... ```
   const cleanedResponse = aiResponse
     .replace(/^```json\s*/, '')
     .replace(/```$/, '')
@@ -236,9 +216,8 @@ async function handleAIAnalysis(text: string, meta?: any): Promise<PersistedGem>
   await chrome.storage.local.set({ [gemId]: result });
   console.log(`FeedMeJD: AI analysis result saved as ${gemId}.`);
 
-  // Destroy the session to free up resources
   await session.destroy();
-  console.log("FeedMeJD: AI session destroyed.");
+  // console.log("FeedMeJD: AI session destroyed.");
 
   return result;
 }

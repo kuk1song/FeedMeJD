@@ -2,14 +2,12 @@ console.log("FeedMeJD Background Script Loaded!");
 chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
     if (request.type === "ANALYZE_JD") {
-      console.log("FeedMeJD: Received JD to analyze.");
       handleAIAnalysis(request.text, request.meta).then((result) => sendResponse({ success: true, data: result })).catch((error) => {
         console.error("FeedMeJD: Error in background analysis.", error);
         sendResponse({ success: false, error: error.message });
       });
       return true;
     } else if (request.type === "OPEN_DASHBOARD") {
-      console.log("FeedMeJD: Opening dashboard");
       openOrSwitchToDashboard();
       sendResponse({ success: true });
       return false;
@@ -44,7 +42,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         files: ["content.js"]
       });
     } else {
-      console.log(`FeedMeJD: Navigated away from jobs page. Sending unload command.`);
       chrome.tabs.sendMessage(tabId, { type: "UNLOAD_PET_UI" }, (response) => {
         if (chrome.runtime.lastError) ;
       });
@@ -80,25 +77,19 @@ async function handleAIAnalysis(text, meta) {
     console.error("Checked: self.ai, window.ai, LanguageModel, self.LanguageModel - all undefined");
     throw new Error("AI_UNAVAILABLE");
   }
-  console.log("FeedMeJD: Checking AI model availability...");
   const availability = await languageModelAPI.availability();
   console.log(`FeedMeJD: AI availability status: ${availability}`);
   const availabilityLower = String(availability).toLowerCase();
-  if (availabilityLower === "readily" || availabilityLower === "available") {
-    console.log("FeedMeJD: AI model is readily available.");
-  } else if (availabilityLower === "after-download" || availabilityLower === "downloadable" || availabilityLower === "downloading") {
-    console.log(`FeedMeJD: AI model status: ${availability}. Attempting to trigger download...`);
-    console.log("FeedMeJD: Proceeding to create session (this will trigger download if needed)...");
-  } else if (availabilityLower === "no" || availabilityLower === "unavailable") {
+  if (availabilityLower === "readily" || availabilityLower === "available") ;
+  else if (availabilityLower === "after-download" || availabilityLower === "downloadable" || availabilityLower === "downloading") ;
+  else if (availabilityLower === "no" || availabilityLower === "unavailable") {
     console.error("FeedMeJD: AI model is not supported on this device.");
     throw new Error("AI_UNAVAILABLE");
   } else {
     console.warn(`FeedMeJD: Unknown availability status: ${availability}. Attempting to proceed...`);
   }
-  console.log("FeedMeJD: Creating AI language model session...");
   let downloadStarted = false;
   const session = await languageModelAPI.create({
-    // Specify expected output language to ensure optimal quality and safety
     monitor(m) {
       m.addEventListener("downloadprogress", (e) => {
         if (!downloadStarted) {
@@ -109,8 +100,6 @@ async function handleAIAnalysis(text, meta) {
       });
     }
   });
-  console.log("FeedMeJD: Session created successfully!");
-  console.log("FeedMeJD: Prompting AI model...");
   const prompt = `
     Analyze the following job description text.
     Extract the key skills and provide a brief summary.
@@ -141,6 +130,5 @@ async function handleAIAnalysis(text, meta) {
   await chrome.storage.local.set({ [gemId]: result });
   console.log(`FeedMeJD: AI analysis result saved as ${gemId}.`);
   await session.destroy();
-  console.log("FeedMeJD: AI session destroyed.");
   return result;
 }

@@ -10,7 +10,7 @@ declare global {
 if (typeof window.feedMeJdInjected === 'undefined') {
   window.feedMeJdInjected = true;
 
-  console.log("FeedMeJD Content Script Injected & Running!");
+  // console.log("FeedMeJD Content Script Injected & Running!");
 
   /**
    * Manages all UI and interactions for the pet on the page.
@@ -99,10 +99,9 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       this.petContainer.appendChild(this.petImage);
       document.body.appendChild(this.petContainer);
 
-      // Click on the entire container (cat head) to trigger analysis or view dashboard
       this.petContainer.addEventListener('click', this.handlePetClick.bind(this));
       
-      console.log("FeedMeJD: Pet UI injected (compact design).");
+      // console.log("FeedMeJD: Pet UI injected (compact design).");
     }
 
     /**
@@ -167,12 +166,11 @@ if (typeof window.feedMeJdInjected === 'undefined') {
      * Only updates if the state actually changes to avoid redundant DOM operations.
      */
     private setState(state: 'idle' | 'hungry' | 'eating' | 'done'): void {
-      // Skip if already in this state
       if (this.currentState === state) {
         return;
       }
       
-      console.log(`FeedMeJD: State change: ${this.currentState} → ${state}`);
+      // console.log(`FeedMeJD: State change: ${this.currentState} → ${state}`);
       this.currentState = state;
       
       const stateDetails = {
@@ -185,10 +183,9 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       this.petImage.src = chrome.runtime.getURL(`images/${stateDetails[state].img}`);
       this.petImage.title = stateDetails[state].title;
       
-      // Add or remove the animation class based on the state
       if (state === 'eating') {
         this.petImage.classList.add('is-eating');
-        console.log("FeedMeJD: Added 'is-eating' class. Animation should be visible now!");
+        // console.log("FeedMeJD: Added 'is-eating' class. Animation should be visible now!");
       } else {
         this.petImage.classList.remove('is-eating');
       }
@@ -200,9 +197,8 @@ if (typeof window.feedMeJdInjected === 'undefined') {
      * Completed jobs are clickable to view dashboard (no persistent badge).
      */
     private async updateStateBasedOnJD(): Promise<void> {
-      // Don't update state if currently analyzing - prevents MutationObserver from interrupting
       if (this.isAnalyzing) {
-        console.log("FeedMeJD: Skipping state update - analysis in progress");
+        // console.log("FeedMeJD: Skipping state update - analysis in progress");
         return;
       }
       
@@ -355,14 +351,12 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         return;
       }
       
-      // If already completed, open dashboard instead of re-analyzing
       if (this.petContainer.classList.contains('completed')) {
-        console.log("FeedMeJD: Opening dashboard for completed job");
+        // console.log("FeedMeJD: Opening dashboard for completed job");
         chrome.runtime.sendMessage({ type: "OPEN_DASHBOARD" });
         return;
       }
       
-      // Otherwise, proceed with analysis
       this.jdElement = document.querySelector('.jobs-description__content .jobs-box__html-content, .jobs-description-content__text');
       if (!this.jdElement) {
         console.warn("FeedMeJD: Cat clicked, but no JD description found on the page.");
@@ -370,7 +364,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         return;
       }
 
-      console.log("FeedMeJD: Cat head clicked! Starting analysis...");
+      // console.log("FeedMeJD: Cat head clicked! Starting analysis...");
       
       // ✅ CRITICAL: Capture the job ID at the moment of clicking
       // This snapshot will be used throughout the async operation
@@ -386,7 +380,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
       this.petContainer.classList.add('analyzing');
 
       const jdText = this.jdElement.innerText;
-      console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters) for job ${jobIdSnapshot || 'unknown'}. Sending to background...`);
+      // console.log(`FeedMeJD: Extracted JD text (${jdText.length} characters) for job ${jobIdSnapshot || 'unknown'}. Sending to background...`);
       
       const meta = this.extractJobMeta();
       // Ensure we bind the snapshot job id
@@ -413,20 +407,16 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         }
         
     if (response && response.success) {
-          console.log("FeedMeJD: Analysis successful for job", jobIdSnapshot || 'unknown');
+          // console.log("FeedMeJD: Analysis successful for job", jobIdSnapshot || 'unknown');
           
-          // ✅ CRITICAL: Check if user is still on the same job
-          // Only show success animation if we're still on the job that was analyzed
           if (this.currentJobId === jobIdSnapshot) {
             this.runSuccessAnimation(jobIdSnapshot);
           } else {
-            console.warn(`FeedMeJD: User navigated away. Analysis was for job ${jobIdSnapshot}, but now viewing ${this.currentJobId}. Saving silently without UI update.`);
-            // Still save the analyzed job, but don't update UI
+            // console.warn(`FeedMeJD: User navigated away. Analysis was for job ${jobIdSnapshot}, but now viewing ${this.currentJobId}. Saving silently without UI update.`);
             if (jobIdSnapshot) {
               this.markJobAsAnalyzed(jobIdSnapshot);
             }
             this.isAnalyzing = false;
-            // Re-run logic to update UI for the current job
             this.runLogic();
           }
         } else {
@@ -444,33 +434,27 @@ if (typeof window.feedMeJdInjected === 'undefined') {
      * @param analyzedJobId The ID of the job that was actually analyzed (snapshot from when analysis started)
      */
     private runSuccessAnimation(analyzedJobId: string | null): void {
-      console.log("FeedMeJD: Starting success animation for job", analyzedJobId || 'unknown');
+      // console.log("FeedMeJD: Starting success animation for job", analyzedJobId || 'unknown');
       
-      // 1. Save the ANALYZED job ID (not current job ID)
       if (analyzedJobId) {
         this.markJobAsAnalyzed(analyzedJobId);
       }
       
-      // 2. Show celebration gem (will auto-remove after 1.1s)
       this.showCelebrationGem();
       
-      // 3. After a short delay, switch to done state
-      // The gem animation overlaps with this transition for smooth effect
       setTimeout(() => {
-        // ✅ Double-check: Only update UI if we're STILL on the analyzed job
         if (this.currentJobId === analyzedJobId) {
-          console.log("FeedMeJD: Switching to 'done' state...");
+          // console.log("FeedMeJD: Switching to 'done' state...");
           this.setState('done');
           this.petImage.title = "Click to view analysis in gallery";
           this.tooltip.textContent = "View Gallery";
           this.petContainer.classList.add('completed');
     } else {
-          console.log(`FeedMeJD: User navigated away during animation. Skipping UI update.`);
-          // Update UI for current job instead
+          // console.log(`FeedMeJD: User navigated away during animation. Skipping UI update.`);
           this.runLogic();
         }
-        this.isAnalyzing = false; // Clear flag after animation completes
-      }, 300); // Slight delay so user sees gem appear first
+        this.isAnalyzing = false;
+      }, 300);
     }
 
     /**
@@ -488,7 +472,7 @@ if (typeof window.feedMeJdInjected === 'undefined') {
         if (!analyzedJobs.includes(jobId)) {
           analyzedJobs.push(jobId);
           chrome.storage.local.set({ analyzedJobs }, () => {
-            console.log(`FeedMeJD: Job ${jobId} marked as analyzed.`);
+            // console.log(`FeedMeJD: Job ${jobId} marked as analyzed.`);
           });
     }
   });
