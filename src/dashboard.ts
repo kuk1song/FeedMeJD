@@ -352,7 +352,7 @@ function renderConstellationView(): void {
     transition: opacity 0.12s ease;
     white-space: nowrap;
     z-index: 100;
-    transform: translate(-50%, calc(-100% - 12px));
+    transform: translate(-50%, calc(-100% - 1px));
   `;
   container.appendChild(tooltip);
 
