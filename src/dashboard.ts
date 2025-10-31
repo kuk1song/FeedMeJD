@@ -1,6 +1,7 @@
 // Dashboard logic - Upgraded with interactive views and delete functionality
 
 import { renderSkillGalaxy } from './views/skillGalaxyView';
+import { renderWordCloud, WordCloudData } from './views/wordCloudView';
 import {
   Gem,
   SkillData,
@@ -11,7 +12,7 @@ import {
 
 const GALAXY_VIEW_ENABLED = true;
 
-type SkillView = 'constellation' | 'prism' | 'galaxy';
+type SkillView = 'constellation' | 'prism' | 'galaxy' | 'wordcloud';
 
 // Current view state
 let currentView: SkillView = 'constellation';
@@ -41,8 +42,9 @@ function setupViewSwitcher(): void {
   const constellationBtn = document.getElementById('constellation-view-btn');
   const prismBtn = document.getElementById('prism-view-btn');
   const galaxyBtn = document.getElementById('galaxy-view-btn');
+  const wordcloudBtn = document.getElementById('wordcloud-view-btn');
 
-  if (!constellationBtn || !prismBtn || !galaxyBtn) return;
+  if (!constellationBtn || !prismBtn || !galaxyBtn || !wordcloudBtn) return;
 
   constellationBtn.classList.add('active');
 
@@ -50,6 +52,7 @@ function setupViewSwitcher(): void {
     constellationBtn.classList.toggle('active', view === 'constellation');
     prismBtn.classList.toggle('active', view === 'prism');
     galaxyBtn.classList.toggle('active', view === 'galaxy');
+    wordcloudBtn.classList.toggle('active', view === 'wordcloud');
 
     // If Galaxy is disabled, give visual hint but keep button accessible.
     if (!GALAXY_VIEW_ENABLED) {
@@ -71,6 +74,7 @@ function setupViewSwitcher(): void {
   constellationBtn.addEventListener('click', () => handleSwitch('constellation'));
   prismBtn.addEventListener('click', () => handleSwitch('prism'));
   galaxyBtn.addEventListener('click', () => handleSwitch('galaxy'));
+  wordcloudBtn.addEventListener('click', () => handleSwitch('wordcloud'));
 
   updateActiveClasses(currentView);
 }
@@ -319,6 +323,8 @@ function renderCurrentView(): void {
     renderConstellationView();
   } else if (currentView === 'prism') {
     renderPrismView();
+  } else if (currentView === 'wordcloud') {
+    renderWordCloudView();
   } else {
     if (GALAXY_VIEW_ENABLED) {
       renderGalaxyView();
@@ -914,6 +920,29 @@ function renderGalaxyView(): void {
   if (!container) return;
 
   renderSkillGalaxy(container, skillGalaxy, {
+    height: 520,
+  });
+}
+
+/**
+ * Renders the Word Cloud view using d3-cloud.
+ */
+function renderWordCloudView(): void {
+  const container = document.getElementById('skill-crystal');
+  if (!container) return;
+
+  // Combine all skills from hard and soft with their counts
+  const wordData: WordCloudData[] = [];
+  
+  skillData.hard.forEach((count, skill) => {
+    wordData.push({ text: skill, size: 10 + count * 10 });
+  });
+  
+  skillData.soft.forEach((count, skill) => {
+    wordData.push({ text: skill, size: 10 + count * 10 });
+  });
+
+  renderWordCloud(container, wordData, {
     height: 520,
   });
 }

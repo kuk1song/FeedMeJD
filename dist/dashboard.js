@@ -52,6 +52,46 @@ function number$1(x2) {
 const ascendingBisect = bisector(ascending$1);
 const bisectRight = ascendingBisect.right;
 bisector(number$1).center;
+class InternMap extends Map {
+  constructor(entries, key = keyof) {
+    super();
+    Object.defineProperties(this, { _intern: { value: /* @__PURE__ */ new Map() }, _key: { value: key } });
+    if (entries != null) for (const [key2, value] of entries) this.set(key2, value);
+  }
+  get(key) {
+    return super.get(intern_get(this, key));
+  }
+  has(key) {
+    return super.has(intern_get(this, key));
+  }
+  set(key, value) {
+    return super.set(intern_set(this, key), value);
+  }
+  delete(key) {
+    return super.delete(intern_delete(this, key));
+  }
+}
+function intern_get({ _intern, _key }, value) {
+  const key = _key(value);
+  return _intern.has(key) ? _intern.get(key) : value;
+}
+function intern_set({ _intern, _key }, value) {
+  const key = _key(value);
+  if (_intern.has(key)) return _intern.get(key);
+  _intern.set(key, value);
+  return value;
+}
+function intern_delete({ _intern, _key }, value) {
+  const key = _key(value);
+  if (_intern.has(key)) {
+    value = _intern.get(key);
+    _intern.delete(key);
+  }
+  return value;
+}
+function keyof(value) {
+  return value !== null && typeof value === "object" ? value.valueOf() : value;
+}
 const e10 = Math.sqrt(50), e5 = Math.sqrt(10), e2 = Math.sqrt(2);
 function tickSpec(start2, stop, count) {
   const step = (stop - start2) / Math.max(0, count), power = Math.floor(Math.log10(step)), error = step / Math.pow(10, power), factor = error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1;
@@ -134,19 +174,19 @@ function min(values, valueof) {
   }
   return min2;
 }
-var noop = { value: () => {
+var noop$1 = { value: () => {
 } };
-function dispatch() {
+function dispatch$1() {
   for (var i = 0, n = arguments.length, _ = {}, t; i < n; ++i) {
     if (!(t = arguments[i] + "") || t in _ || /[\s.]/.test(t)) throw new Error("illegal type: " + t);
     _[t] = [];
   }
-  return new Dispatch(_);
+  return new Dispatch$1(_);
 }
-function Dispatch(_) {
+function Dispatch$1(_) {
   this._ = _;
 }
-function parseTypenames$1(typenames, types) {
+function parseTypenames$2(typenames, types) {
   return typenames.trim().split(/^|\s+/).map(function(t) {
     var name = "", i = t.indexOf(".");
     if (i >= 0) name = t.slice(i + 1), t = t.slice(0, i);
@@ -154,25 +194,25 @@ function parseTypenames$1(typenames, types) {
     return { type: t, name };
   });
 }
-Dispatch.prototype = dispatch.prototype = {
-  constructor: Dispatch,
+Dispatch$1.prototype = dispatch$1.prototype = {
+  constructor: Dispatch$1,
   on: function(typename, callback) {
-    var _ = this._, T = parseTypenames$1(typename + "", _), t, i = -1, n = T.length;
+    var _ = this._, T = parseTypenames$2(typename + "", _), t, i = -1, n = T.length;
     if (arguments.length < 2) {
-      while (++i < n) if ((t = (typename = T[i]).type) && (t = get$1(_[t], typename.name))) return t;
+      while (++i < n) if ((t = (typename = T[i]).type) && (t = get$2(_[t], typename.name))) return t;
       return;
     }
     if (callback != null && typeof callback !== "function") throw new Error("invalid callback: " + callback);
     while (++i < n) {
-      if (t = (typename = T[i]).type) _[t] = set$1(_[t], typename.name, callback);
-      else if (callback == null) for (t in _) _[t] = set$1(_[t], typename.name, null);
+      if (t = (typename = T[i]).type) _[t] = set$2(_[t], typename.name, callback);
+      else if (callback == null) for (t in _) _[t] = set$2(_[t], typename.name, null);
     }
     return this;
   },
   copy: function() {
     var copy2 = {}, _ = this._;
     for (var t in _) copy2[t] = _[t].slice();
-    return new Dispatch(copy2);
+    return new Dispatch$1(copy2);
   },
   call: function(type, that) {
     if ((n = arguments.length - 2) > 0) for (var args = new Array(n), i = 0, n, t; i < n; ++i) args[i] = arguments[i + 2];
@@ -184,17 +224,17 @@ Dispatch.prototype = dispatch.prototype = {
     for (var t = this._[type], i = 0, n = t.length; i < n; ++i) t[i].value.apply(that, args);
   }
 };
-function get$1(type, name) {
+function get$2(type, name) {
   for (var i = 0, n = type.length, c2; i < n; ++i) {
     if ((c2 = type[i]).name === name) {
       return c2.value;
     }
   }
 }
-function set$1(type, name, callback) {
+function set$2(type, name, callback) {
   for (var i = 0, n = type.length; i < n; ++i) {
     if (type[i].name === name) {
-      type[i] = noop, type = type.slice(0, i).concat(type.slice(i + 1));
+      type[i] = noop$1, type = type.slice(0, i).concat(type.slice(i + 1));
       break;
     }
   }
@@ -757,7 +797,7 @@ function contextListener(listener) {
     listener.call(this, event, this.__data__);
   };
 }
-function parseTypenames(typenames) {
+function parseTypenames$1(typenames) {
   return typenames.trim().split(/^|\s+/).map(function(t) {
     var name = "", i = t.indexOf(".");
     if (i >= 0) name = t.slice(i + 1), t = t.slice(0, i);
@@ -797,7 +837,7 @@ function onAdd(typename, value, options) {
   };
 }
 function selection_on(typename, value, options) {
-  var typenames = parseTypenames(typename + ""), i, n = typenames.length, t;
+  var typenames = parseTypenames$1(typename + ""), i, n = typenames.length, t;
   if (arguments.length < 2) {
     var on = this.node().__on;
     if (on) for (var j = 0, m2 = on.length, o; j < m2; ++j) {
@@ -996,7 +1036,7 @@ function defaultTouchable() {
   return navigator.maxTouchPoints || "ontouchstart" in this;
 }
 function drag() {
-  var filter2 = defaultFilter, container = defaultContainer, subject = defaultSubject, touchable = defaultTouchable, gestures = {}, listeners = dispatch("start", "drag", "end"), active = 0, mousedownx, mousedowny, mousemoving, touchending, clickDistance2 = 0;
+  var filter2 = defaultFilter, container = defaultContainer, subject = defaultSubject, touchable = defaultTouchable, gestures = {}, listeners = dispatch$1("start", "drag", "end"), active = 0, mousedownx, mousedowny, mousemoving, touchending, clickDistance2 = 0;
   function drag2(selection2) {
     selection2.on("mousedown.drag", mousedowned).filter(touchable).on("touchstart.drag", touchstarted).on("touchmove.drag", touchmoved, nonpassive).on("touchend.drag touchcancel.drag", touchended).style("touch-action", "none").style("-webkit-tap-highlight-color", "rgba(0,0,0,0)");
   }
@@ -1780,7 +1820,7 @@ function timeout(callback, delay, time) {
   }, delay, time);
   return t;
 }
-var emptyOn = dispatch("start", "end", "cancel", "interrupt");
+var emptyOn = dispatch$1("start", "end", "cancel", "interrupt");
 var emptyTween = [];
 var CREATED = 0;
 var SCHEDULED = 1;
@@ -1810,16 +1850,16 @@ function schedule(node, name, id2, index2, group, timing) {
   });
 }
 function init(node, id2) {
-  var schedule2 = get(node, id2);
+  var schedule2 = get$1(node, id2);
   if (schedule2.state > CREATED) throw new Error("too late; already scheduled");
   return schedule2;
 }
-function set(node, id2) {
-  var schedule2 = get(node, id2);
+function set$1(node, id2) {
+  var schedule2 = get$1(node, id2);
   if (schedule2.state > STARTED) throw new Error("too late; already running");
   return schedule2;
 }
-function get(node, id2) {
+function get$1(node, id2) {
   var schedule2 = node.__transition;
   if (!schedule2 || !(schedule2 = schedule2[id2])) throw new Error("transition not found");
   return schedule2;
@@ -1914,7 +1954,7 @@ function selection_interrupt(name) {
 function tweenRemove(id2, name) {
   var tween0, tween1;
   return function() {
-    var schedule2 = set(this, id2), tween = schedule2.tween;
+    var schedule2 = set$1(this, id2), tween = schedule2.tween;
     if (tween !== tween0) {
       tween1 = tween0 = tween;
       for (var i = 0, n = tween1.length; i < n; ++i) {
@@ -1932,7 +1972,7 @@ function tweenFunction(id2, name, value) {
   var tween0, tween1;
   if (typeof value !== "function") throw new Error();
   return function() {
-    var schedule2 = set(this, id2), tween = schedule2.tween;
+    var schedule2 = set$1(this, id2), tween = schedule2.tween;
     if (tween !== tween0) {
       tween1 = (tween0 = tween).slice();
       for (var t = { name, value }, i = 0, n = tween1.length; i < n; ++i) {
@@ -1950,7 +1990,7 @@ function transition_tween(name, value) {
   var id2 = this._id;
   name += "";
   if (arguments.length < 2) {
-    var tween = get(this.node(), id2).tween;
+    var tween = get$1(this.node(), id2).tween;
     for (var i = 0, n = tween.length, t; i < n; ++i) {
       if ((t = tween[i]).name === name) {
         return t.value;
@@ -1963,11 +2003,11 @@ function transition_tween(name, value) {
 function tweenValue(transition, name, value) {
   var id2 = transition._id;
   transition.each(function() {
-    var schedule2 = set(this, id2);
+    var schedule2 = set$1(this, id2);
     (schedule2.value || (schedule2.value = {}))[name] = value.apply(this, arguments);
   });
   return function(node) {
-    return get(node, id2).value[name];
+    return get$1(node, id2).value[name];
   };
 }
 function interpolate(a2, b) {
@@ -2072,37 +2112,37 @@ function delayConstant(id2, value) {
 }
 function transition_delay(value) {
   var id2 = this._id;
-  return arguments.length ? this.each((typeof value === "function" ? delayFunction : delayConstant)(id2, value)) : get(this.node(), id2).delay;
+  return arguments.length ? this.each((typeof value === "function" ? delayFunction : delayConstant)(id2, value)) : get$1(this.node(), id2).delay;
 }
 function durationFunction(id2, value) {
   return function() {
-    set(this, id2).duration = +value.apply(this, arguments);
+    set$1(this, id2).duration = +value.apply(this, arguments);
   };
 }
 function durationConstant(id2, value) {
   return value = +value, function() {
-    set(this, id2).duration = value;
+    set$1(this, id2).duration = value;
   };
 }
 function transition_duration(value) {
   var id2 = this._id;
-  return arguments.length ? this.each((typeof value === "function" ? durationFunction : durationConstant)(id2, value)) : get(this.node(), id2).duration;
+  return arguments.length ? this.each((typeof value === "function" ? durationFunction : durationConstant)(id2, value)) : get$1(this.node(), id2).duration;
 }
 function easeConstant(id2, value) {
   if (typeof value !== "function") throw new Error();
   return function() {
-    set(this, id2).ease = value;
+    set$1(this, id2).ease = value;
   };
 }
 function transition_ease(value) {
   var id2 = this._id;
-  return arguments.length ? this.each(easeConstant(id2, value)) : get(this.node(), id2).ease;
+  return arguments.length ? this.each(easeConstant(id2, value)) : get$1(this.node(), id2).ease;
 }
 function easeVarying(id2, value) {
   return function() {
     var v = value.apply(this, arguments);
     if (typeof v !== "function") throw new Error();
-    set(this, id2).ease = v;
+    set$1(this, id2).ease = v;
   };
 }
 function transition_easeVarying(value) {
@@ -2142,7 +2182,7 @@ function start(name) {
   });
 }
 function onFunction(id2, name, listener) {
-  var on0, on1, sit = start(name) ? init : set;
+  var on0, on1, sit = start(name) ? init : set$1;
   return function() {
     var schedule2 = sit(this, id2), on = schedule2.on;
     if (on !== on0) (on1 = (on0 = on).copy()).on(name, listener);
@@ -2151,7 +2191,7 @@ function onFunction(id2, name, listener) {
 }
 function transition_on(name, listener) {
   var id2 = this._id;
-  return arguments.length < 2 ? get(this.node(), id2).on.on(name) : this.each(onFunction(id2, name, listener));
+  return arguments.length < 2 ? get$1(this.node(), id2).on.on(name) : this.each(onFunction(id2, name, listener));
 }
 function removeFunction(id2) {
   return function() {
@@ -2171,7 +2211,7 @@ function transition_select(select2) {
       if ((node = group[i]) && (subnode = select2.call(node, node.__data__, i, group))) {
         if ("__data__" in node) subnode.__data__ = node.__data__;
         subgroup[i] = subnode;
-        schedule(subgroup[i], name, id2, i, subgroup, get(node, id2));
+        schedule(subgroup[i], name, id2, i, subgroup, get$1(node, id2));
       }
     }
   }
@@ -2183,7 +2223,7 @@ function transition_selectAll(select2) {
   for (var groups = this._groups, m2 = groups.length, subgroups = [], parents = [], j = 0; j < m2; ++j) {
     for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) {
       if (node = group[i]) {
-        for (var children2 = select2.call(node, node.__data__, i, group), child, inherit2 = get(node, id2), k = 0, l = children2.length; k < l; ++k) {
+        for (var children2 = select2.call(node, node.__data__, i, group), child, inherit2 = get$1(node, id2), k = 0, l = children2.length; k < l; ++k) {
           if (child = children2[k]) {
             schedule(child, name, id2, k, children2, inherit2);
           }
@@ -2229,7 +2269,7 @@ function styleFunction(name, interpolate2, value) {
 function styleMaybeRemove(id2, name) {
   var on0, on1, listener0, key = "style." + name, event = "end." + key, remove2;
   return function() {
-    var schedule2 = set(this, id2), on = schedule2.on, listener = schedule2.value[key] == null ? remove2 || (remove2 = styleRemove(name)) : void 0;
+    var schedule2 = set$1(this, id2), on = schedule2.on, listener = schedule2.value[key] == null ? remove2 || (remove2 = styleRemove(name)) : void 0;
     if (on !== on0 || listener0 !== listener) (on1 = (on0 = on).copy()).on(event, listener0 = listener);
     schedule2.on = on1;
   };
@@ -2301,7 +2341,7 @@ function transition_transition() {
   for (var groups = this._groups, m2 = groups.length, j = 0; j < m2; ++j) {
     for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) {
       if (node = group[i]) {
-        var inherit2 = get(node, id0);
+        var inherit2 = get$1(node, id0);
         schedule(node, name, id1, i, group, {
           time: inherit2.time + inherit2.delay + inherit2.duration,
           delay: 0,
@@ -2320,7 +2360,7 @@ function transition_end() {
       if (--size === 0) resolve();
     } };
     that.each(function() {
-      var schedule2 = set(this, id2), on = schedule2.on;
+      var schedule2 = set$1(this, id2), on = schedule2.on;
       if (on !== on0) {
         on1 = (on0 = on).copy();
         on1._.cancel.push(cancel);
@@ -2711,8 +2751,8 @@ function constant(x2) {
     return x2;
   };
 }
-function jiggle(random) {
-  return (random() - 0.5) * 1e-6;
+function jiggle(random2) {
+  return (random2() - 0.5) * 1e-6;
 }
 function x$1(d) {
   return d.x + d.vx;
@@ -2721,7 +2761,7 @@ function y$1(d) {
   return d.y + d.vy;
 }
 function collide(radius) {
-  var nodes, radii, random, strength = 1, iterations = 1;
+  var nodes, radii, random2, strength = 1, iterations = 1;
   if (typeof radius !== "function") radius = constant(radius == null ? 1 : +radius);
   function force() {
     var i, n = nodes.length, tree, node, xi, yi, ri, ri2;
@@ -2741,8 +2781,8 @@ function collide(radius) {
         if (data.index > node.index) {
           var x2 = xi - data.x - data.vx, y2 = yi - data.y - data.vy, l = x2 * x2 + y2 * y2;
           if (l < r * r) {
-            if (x2 === 0) x2 = jiggle(random), l += x2 * x2;
-            if (y2 === 0) y2 = jiggle(random), l += y2 * y2;
+            if (x2 === 0) x2 = jiggle(random2), l += x2 * x2;
+            if (y2 === 0) y2 = jiggle(random2), l += y2 * y2;
             l = (r - (l = Math.sqrt(l))) / l * strength;
             node.vx += (x2 *= l) * (r = (rj *= rj) / (ri2 + rj));
             node.vy += (y2 *= l) * r;
@@ -2771,7 +2811,7 @@ function collide(radius) {
   }
   force.initialize = function(_nodes, _random) {
     nodes = _nodes;
-    random = _random;
+    random2 = _random;
     initialize();
   };
   force.iterations = function(_) {
@@ -2794,7 +2834,7 @@ function find(nodeById, nodeId) {
   return node;
 }
 function link(links) {
-  var id2 = index, strength = defaultStrength, strengths, distance = constant(30), distances, nodes, count, bias, random, iterations = 1;
+  var id2 = index, strength = defaultStrength, strengths, distance = constant(30), distances, nodes, count, bias, random2, iterations = 1;
   if (links == null) links = [];
   function defaultStrength(link2) {
     return 1 / Math.min(count[link2.source.index], count[link2.target.index]);
@@ -2803,8 +2843,8 @@ function link(links) {
     for (var k = 0, n = links.length; k < iterations; ++k) {
       for (var i = 0, link2, source, target, x2, y2, l, b; i < n; ++i) {
         link2 = links[i], source = link2.source, target = link2.target;
-        x2 = target.x + target.vx - source.x - source.vx || jiggle(random);
-        y2 = target.y + target.vy - source.y - source.vy || jiggle(random);
+        x2 = target.x + target.vx - source.x - source.vx || jiggle(random2);
+        y2 = target.y + target.vy - source.y - source.vy || jiggle(random2);
         l = Math.sqrt(x2 * x2 + y2 * y2);
         l = (l - distances[i]) / l * alpha * strengths[i];
         x2 *= l, y2 *= l;
@@ -2845,7 +2885,7 @@ function link(links) {
   }
   force.initialize = function(_nodes, _random) {
     nodes = _nodes;
-    random = _random;
+    random2 = _random;
     initialize();
   };
   force.links = function(_) {
@@ -2880,7 +2920,7 @@ function y(d) {
 }
 var initialRadius = 10, initialAngle = Math.PI * (3 - Math.sqrt(5));
 function simulation(nodes) {
-  var simulation2, alpha = 1, alphaMin = 1e-3, alphaDecay = 1 - Math.pow(alphaMin, 1 / 300), alphaTarget = 0, velocityDecay = 0.6, forces = /* @__PURE__ */ new Map(), stepper = timer(step), event = dispatch("tick", "end"), random = lcg();
+  var simulation2, alpha = 1, alphaMin = 1e-3, alphaDecay = 1 - Math.pow(alphaMin, 1 / 300), alphaTarget = 0, velocityDecay = 0.6, forces = /* @__PURE__ */ new Map(), stepper = timer(step), event = dispatch$1("tick", "end"), random2 = lcg();
   if (nodes == null) nodes = [];
   function step() {
     tick();
@@ -2924,7 +2964,7 @@ function simulation(nodes) {
     }
   }
   function initializeForce(force) {
-    if (force.initialize) force.initialize(nodes, random);
+    if (force.initialize) force.initialize(nodes, random2);
     return force;
   }
   initializeNodes();
@@ -2955,7 +2995,7 @@ function simulation(nodes) {
       return arguments.length ? (velocityDecay = 1 - _, simulation2) : 1 - velocityDecay;
     },
     randomSource: function(_) {
-      return arguments.length ? (random = _, forces.forEach(initializeForce), simulation2) : random;
+      return arguments.length ? (random2 = _, forces.forEach(initializeForce), simulation2) : random2;
     },
     force: function(name, _) {
       return arguments.length > 1 ? (_ == null ? forces.delete(name) : forces.set(name, initializeForce(_)), simulation2) : forces.get(name);
@@ -2979,7 +3019,7 @@ function simulation(nodes) {
   };
 }
 function manyBody() {
-  var nodes, node, random, alpha, strength = constant(-30), strengths, distanceMin2 = 1, distanceMax2 = Infinity, theta2 = 0.81;
+  var nodes, node, random2, alpha, strength = constant(-30), strengths, distanceMin2 = 1, distanceMax2 = Infinity, theta2 = 0.81;
   function force(_) {
     var i, n = nodes.length, tree = quadtree(nodes, x, y).visitAfter(accumulate);
     for (alpha = _, i = 0; i < n; ++i) node = nodes[i], tree.visit(apply);
@@ -3015,8 +3055,8 @@ function manyBody() {
     var x3 = quad.x - node.x, y2 = quad.y - node.y, w = x2 - x1, l = x3 * x3 + y2 * y2;
     if (w * w / theta2 < l) {
       if (l < distanceMax2) {
-        if (x3 === 0) x3 = jiggle(random), l += x3 * x3;
-        if (y2 === 0) y2 = jiggle(random), l += y2 * y2;
+        if (x3 === 0) x3 = jiggle(random2), l += x3 * x3;
+        if (y2 === 0) y2 = jiggle(random2), l += y2 * y2;
         if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
         node.vx += x3 * quad.value * alpha / l;
         node.vy += y2 * quad.value * alpha / l;
@@ -3024,8 +3064,8 @@ function manyBody() {
       return true;
     } else if (quad.length || l >= distanceMax2) return;
     if (quad.data !== node || quad.next) {
-      if (x3 === 0) x3 = jiggle(random), l += x3 * x3;
-      if (y2 === 0) y2 = jiggle(random), l += y2 * y2;
+      if (x3 === 0) x3 = jiggle(random2), l += x3 * x3;
+      if (y2 === 0) y2 = jiggle(random2), l += y2 * y2;
       if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
     }
     do
@@ -3038,7 +3078,7 @@ function manyBody() {
   }
   force.initialize = function(_nodes, _random) {
     nodes = _nodes;
-    random = _random;
+    random2 = _random;
     initialize();
   };
   force.strength = function(_) {
@@ -3278,6 +3318,38 @@ function initRange(domain, range) {
   }
   return this;
 }
+const implicit = Symbol("implicit");
+function ordinal() {
+  var index2 = new InternMap(), domain = [], range = [], unknown = implicit;
+  function scale(d) {
+    let i = index2.get(d);
+    if (i === void 0) {
+      if (unknown !== implicit) return unknown;
+      index2.set(d, i = domain.push(d) - 1);
+    }
+    return range[i % range.length];
+  }
+  scale.domain = function(_) {
+    if (!arguments.length) return domain.slice();
+    domain = [], index2 = new InternMap();
+    for (const value of _) {
+      if (index2.has(value)) continue;
+      index2.set(value, domain.push(value) - 1);
+    }
+    return scale;
+  };
+  scale.range = function(_) {
+    return arguments.length ? (range = Array.from(_), scale) : range.slice();
+  };
+  scale.unknown = function(_) {
+    return arguments.length ? (unknown = _, scale) : unknown;
+  };
+  scale.copy = function() {
+    return ordinal(domain, range).unknown(unknown);
+  };
+  initRange.apply(scale, arguments);
+  return scale;
+}
 function constants(x2) {
   return function() {
     return x2;
@@ -3468,6 +3540,12 @@ function pow() {
 function sqrt() {
   return pow.apply(null, arguments).exponent(0.5);
 }
+function colors(specifier) {
+  var n = specifier.length / 6 | 0, colors2 = new Array(n), i = 0;
+  while (i < n) colors2[i] = "#" + specifier.slice(i * 6, ++i * 6);
+  return colors2;
+}
+const category10 = colors("1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf");
 function Transform(k, x2, y2) {
   this.k = k;
   this.x = x2;
@@ -3762,6 +3840,435 @@ function renderSkillGalaxy(container, data, options = {}) {
   };
   container.__galaxyCleanup = cleanup;
 }
+function getDefaultExportFromCjs(x2) {
+  return x2 && x2.__esModule && Object.prototype.hasOwnProperty.call(x2, "default") ? x2["default"] : x2;
+}
+function getAugmentedNamespace(n) {
+  if (Object.prototype.hasOwnProperty.call(n, "__esModule")) return n;
+  var f = n.default;
+  if (typeof f == "function") {
+    var a2 = function a3() {
+      var isInstance = false;
+      try {
+        isInstance = this instanceof a3;
+      } catch {
+      }
+      if (isInstance) {
+        return Reflect.construct(f, arguments, this.constructor);
+      }
+      return f.apply(this, arguments);
+    };
+    a2.prototype = f.prototype;
+  } else a2 = {};
+  Object.defineProperty(a2, "__esModule", { value: true });
+  Object.keys(n).forEach(function(k) {
+    var d = Object.getOwnPropertyDescriptor(n, k);
+    Object.defineProperty(a2, k, d.get ? d : {
+      enumerable: true,
+      get: function() {
+        return n[k];
+      }
+    });
+  });
+  return a2;
+}
+var noop = { value: function() {
+} };
+function dispatch() {
+  for (var i = 0, n = arguments.length, _ = {}, t; i < n; ++i) {
+    if (!(t = arguments[i] + "") || t in _ || /[\s.]/.test(t)) throw new Error("illegal type: " + t);
+    _[t] = [];
+  }
+  return new Dispatch(_);
+}
+function Dispatch(_) {
+  this._ = _;
+}
+function parseTypenames(typenames, types) {
+  return typenames.trim().split(/^|\s+/).map(function(t) {
+    var name = "", i = t.indexOf(".");
+    if (i >= 0) name = t.slice(i + 1), t = t.slice(0, i);
+    if (t && !types.hasOwnProperty(t)) throw new Error("unknown type: " + t);
+    return { type: t, name };
+  });
+}
+Dispatch.prototype = dispatch.prototype = {
+  constructor: Dispatch,
+  on: function(typename, callback) {
+    var _ = this._, T = parseTypenames(typename + "", _), t, i = -1, n = T.length;
+    if (arguments.length < 2) {
+      while (++i < n) if ((t = (typename = T[i]).type) && (t = get(_[t], typename.name))) return t;
+      return;
+    }
+    if (callback != null && typeof callback !== "function") throw new Error("invalid callback: " + callback);
+    while (++i < n) {
+      if (t = (typename = T[i]).type) _[t] = set(_[t], typename.name, callback);
+      else if (callback == null) for (t in _) _[t] = set(_[t], typename.name, null);
+    }
+    return this;
+  },
+  copy: function() {
+    var copy2 = {}, _ = this._;
+    for (var t in _) copy2[t] = _[t].slice();
+    return new Dispatch(copy2);
+  },
+  call: function(type, that) {
+    if ((n = arguments.length - 2) > 0) for (var args = new Array(n), i = 0, n, t; i < n; ++i) args[i] = arguments[i + 2];
+    if (!this._.hasOwnProperty(type)) throw new Error("unknown type: " + type);
+    for (t = this._[type], i = 0, n = t.length; i < n; ++i) t[i].value.apply(that, args);
+  },
+  apply: function(type, that, args) {
+    if (!this._.hasOwnProperty(type)) throw new Error("unknown type: " + type);
+    for (var t = this._[type], i = 0, n = t.length; i < n; ++i) t[i].value.apply(that, args);
+  }
+};
+function get(type, name) {
+  for (var i = 0, n = type.length, c2; i < n; ++i) {
+    if ((c2 = type[i]).name === name) {
+      return c2.value;
+    }
+  }
+}
+function set(type, name, callback) {
+  for (var i = 0, n = type.length; i < n; ++i) {
+    if (type[i].name === name) {
+      type[i] = noop, type = type.slice(0, i).concat(type.slice(i + 1));
+      break;
+    }
+  }
+  if (callback != null) type.push({ name, value: callback });
+  return type;
+}
+const src = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  dispatch
+}, Symbol.toStringTag, { value: "Module" }));
+const require$$0 = /* @__PURE__ */ getAugmentedNamespace(src);
+var d3Cloud;
+var hasRequiredD3Cloud;
+function requireD3Cloud() {
+  if (hasRequiredD3Cloud) return d3Cloud;
+  hasRequiredD3Cloud = 1;
+  const dispatch2 = require$$0.dispatch;
+  const RADIANS = Math.PI / 180;
+  const SPIRALS = {
+    archimedean: archimedeanSpiral,
+    rectangular: rectangularSpiral
+  };
+  const cw = 1 << 11 >> 5;
+  const ch = 1 << 11;
+  d3Cloud = function() {
+    var size = [256, 256], text = cloudText, font = cloudFont, fontSize = cloudFontSize, fontStyle = cloudFontNormal, fontWeight = cloudFontNormal, rotate = cloudRotate, padding = cloudPadding, spiral = archimedeanSpiral, words = [], timeInterval = Infinity, event = dispatch2("word", "end"), timer2 = null, random2 = Math.random, cloud2 = {}, canvas = cloudCanvas;
+    cloud2.canvas = function(_) {
+      return arguments.length ? (canvas = functor(_), cloud2) : canvas;
+    };
+    cloud2.start = function() {
+      var contextAndRatio = getContext(canvas()), board = zeroArray((size[0] >> 5) * size[1]), bounds = null, n = words.length, i = -1, tags = [], data = words.map(function(d, i2) {
+        d.text = text.call(this, d, i2);
+        d.font = font.call(this, d, i2);
+        d.style = fontStyle.call(this, d, i2);
+        d.weight = fontWeight.call(this, d, i2);
+        d.rotate = rotate.call(this, d, i2);
+        d.size = ~~fontSize.call(this, d, i2);
+        d.padding = padding.call(this, d, i2);
+        return d;
+      }).sort(function(a2, b) {
+        return b.size - a2.size;
+      });
+      if (timer2) clearInterval(timer2);
+      timer2 = setInterval(step, 0);
+      step();
+      return cloud2;
+      function step() {
+        var start2 = Date.now();
+        while (Date.now() - start2 < timeInterval && ++i < n && timer2) {
+          var d = data[i];
+          d.x = size[0] * (random2() + 0.5) >> 1;
+          d.y = size[1] * (random2() + 0.5) >> 1;
+          cloudSprite(contextAndRatio, d, data, i);
+          if (d.hasText && place(board, d, bounds)) {
+            tags.push(d);
+            event.call("word", cloud2, d);
+            if (bounds) cloudBounds(bounds, d);
+            else bounds = [{ x: d.x + d.x0, y: d.y + d.y0 }, { x: d.x + d.x1, y: d.y + d.y1 }];
+            d.x -= size[0] >> 1;
+            d.y -= size[1] >> 1;
+          }
+        }
+        if (i >= n) {
+          cloud2.stop();
+          event.call("end", cloud2, tags, bounds);
+        }
+      }
+    };
+    cloud2.stop = function() {
+      if (timer2) {
+        clearInterval(timer2);
+        timer2 = null;
+      }
+      for (const d of words) {
+        delete d.sprite;
+      }
+      return cloud2;
+    };
+    function getContext(canvas2) {
+      const context = canvas2.getContext("2d", { willReadFrequently: true });
+      canvas2.width = canvas2.height = 1;
+      const ratio = Math.sqrt(context.getImageData(0, 0, 1, 1).data.length >> 2);
+      canvas2.width = (cw << 5) / ratio;
+      canvas2.height = ch / ratio;
+      context.fillStyle = context.strokeStyle = "red";
+      return { context, ratio };
+    }
+    function place(board, tag, bounds) {
+      [{ x: 0, y: 0 }, { x: size[0], y: size[1] }];
+      var startX = tag.x, startY = tag.y, maxDelta = Math.sqrt(size[0] * size[0] + size[1] * size[1]), s = spiral(size), dt = random2() < 0.5 ? 1 : -1, t = -dt, dxdy, dx, dy;
+      while (dxdy = s(t += dt)) {
+        dx = ~~dxdy[0];
+        dy = ~~dxdy[1];
+        if (Math.min(Math.abs(dx), Math.abs(dy)) >= maxDelta) break;
+        tag.x = startX + dx;
+        tag.y = startY + dy;
+        if (tag.x + tag.x0 < 0 || tag.y + tag.y0 < 0 || tag.x + tag.x1 > size[0] || tag.y + tag.y1 > size[1]) continue;
+        if (!bounds || collideRects(tag, bounds)) {
+          if (!cloudCollide(tag, board, size[0])) {
+            var sprite = tag.sprite, w = tag.width >> 5, sw = size[0] >> 5, lx = tag.x - (w << 4), sx = lx & 127, msx = 32 - sx, h = tag.y1 - tag.y0, x2 = (tag.y + tag.y0) * sw + (lx >> 5), last;
+            for (var j = 0; j < h; j++) {
+              last = 0;
+              for (var i = 0; i <= w; i++) {
+                board[x2 + i] |= last << msx | (i < w ? (last = sprite[j * w + i]) >>> sx : 0);
+              }
+              x2 += sw;
+            }
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    cloud2.timeInterval = function(_) {
+      return arguments.length ? (timeInterval = _ == null ? Infinity : _, cloud2) : timeInterval;
+    };
+    cloud2.words = function(_) {
+      return arguments.length ? (words = _, cloud2) : words;
+    };
+    cloud2.size = function(_) {
+      return arguments.length ? (size = [+_[0], +_[1]], cloud2) : size;
+    };
+    cloud2.font = function(_) {
+      return arguments.length ? (font = functor(_), cloud2) : font;
+    };
+    cloud2.fontStyle = function(_) {
+      return arguments.length ? (fontStyle = functor(_), cloud2) : fontStyle;
+    };
+    cloud2.fontWeight = function(_) {
+      return arguments.length ? (fontWeight = functor(_), cloud2) : fontWeight;
+    };
+    cloud2.rotate = function(_) {
+      return arguments.length ? (rotate = functor(_), cloud2) : rotate;
+    };
+    cloud2.text = function(_) {
+      return arguments.length ? (text = functor(_), cloud2) : text;
+    };
+    cloud2.spiral = function(_) {
+      return arguments.length ? (spiral = SPIRALS[_] || _, cloud2) : spiral;
+    };
+    cloud2.fontSize = function(_) {
+      return arguments.length ? (fontSize = functor(_), cloud2) : fontSize;
+    };
+    cloud2.padding = function(_) {
+      return arguments.length ? (padding = functor(_), cloud2) : padding;
+    };
+    cloud2.random = function(_) {
+      return arguments.length ? (random2 = _, cloud2) : random2;
+    };
+    cloud2.on = function() {
+      var value = event.on.apply(event, arguments);
+      return value === event ? cloud2 : value;
+    };
+    return cloud2;
+  };
+  function cloudText(d) {
+    return d.text;
+  }
+  function cloudFont() {
+    return "serif";
+  }
+  function cloudFontNormal() {
+    return "normal";
+  }
+  function cloudFontSize(d) {
+    return Math.sqrt(d.value);
+  }
+  function cloudRotate() {
+    return (~~(random() * 6) - 3) * 30;
+  }
+  function cloudPadding() {
+    return 1;
+  }
+  function cloudSprite(contextAndRatio, d, data, di) {
+    if (d.sprite) return;
+    var c2 = contextAndRatio.context, ratio = contextAndRatio.ratio;
+    c2.clearRect(0, 0, (cw << 5) / ratio, ch / ratio);
+    var x2 = 0, y2 = 0, maxh = 0, n = data.length;
+    --di;
+    while (++di < n) {
+      d = data[di];
+      c2.save();
+      c2.font = d.style + " " + d.weight + " " + ~~((d.size + 1) / ratio) + "px " + d.font;
+      const metrics = c2.measureText(d.text);
+      const anchor = -Math.floor(metrics.width / 2);
+      let w2 = (metrics.width + 1) * ratio;
+      let h2 = d.size << 1;
+      if (d.rotate) {
+        var sr = Math.sin(d.rotate * RADIANS), cr = Math.cos(d.rotate * RADIANS), wcr = w2 * cr, wsr = w2 * sr, hcr = h2 * cr, hsr = h2 * sr;
+        w2 = Math.max(Math.abs(wcr + hsr), Math.abs(wcr - hsr)) + 31 >> 5 << 5;
+        h2 = ~~Math.max(Math.abs(wsr + hcr), Math.abs(wsr - hcr));
+      } else {
+        w2 = w2 + 31 >> 5 << 5;
+      }
+      if (h2 > maxh) maxh = h2;
+      if (x2 + w2 >= cw << 5) {
+        x2 = 0;
+        y2 += maxh;
+        maxh = 0;
+      }
+      if (y2 + h2 >= ch) break;
+      c2.translate((x2 + (w2 >> 1)) / ratio, (y2 + (h2 >> 1)) / ratio);
+      if (d.rotate) c2.rotate(d.rotate * RADIANS);
+      c2.fillText(d.text, anchor, 0);
+      if (d.padding) c2.lineWidth = 2 * d.padding, c2.strokeText(d.text, anchor, 0);
+      c2.restore();
+      d.width = w2;
+      d.height = h2;
+      d.xoff = x2;
+      d.yoff = y2;
+      d.x1 = w2 >> 1;
+      d.y1 = h2 >> 1;
+      d.x0 = -d.x1;
+      d.y0 = -d.y1;
+      d.hasText = true;
+      x2 += w2;
+    }
+    var pixels = c2.getImageData(0, 0, (cw << 5) / ratio, ch / ratio).data, sprite = [];
+    while (--di >= 0) {
+      d = data[di];
+      if (!d.hasText) continue;
+      var w = d.width, w32 = w >> 5, h = d.y1 - d.y0;
+      for (var i = 0; i < h * w32; i++) sprite[i] = 0;
+      x2 = d.xoff;
+      if (x2 == null) return;
+      y2 = d.yoff;
+      var seen = 0, seenRow = -1;
+      for (var j = 0; j < h; j++) {
+        for (var i = 0; i < w; i++) {
+          var k = w32 * j + (i >> 5), m2 = pixels[(y2 + j) * (cw << 5) + (x2 + i) << 2] ? 1 << 31 - i % 32 : 0;
+          sprite[k] |= m2;
+          seen |= m2;
+        }
+        if (seen) seenRow = j;
+        else {
+          d.y0++;
+          h--;
+          j--;
+          y2++;
+        }
+      }
+      d.y1 = d.y0 + seenRow;
+      d.sprite = sprite.slice(0, (d.y1 - d.y0) * w32);
+    }
+  }
+  function cloudCollide(tag, board, sw) {
+    sw >>= 5;
+    var sprite = tag.sprite, w = tag.width >> 5, lx = tag.x - (w << 4), sx = lx & 127, msx = 32 - sx, h = tag.y1 - tag.y0, x2 = (tag.y + tag.y0) * sw + (lx >> 5), last;
+    for (var j = 0; j < h; j++) {
+      last = 0;
+      for (var i = 0; i <= w; i++) {
+        if ((last << msx | (i < w ? (last = sprite[j * w + i]) >>> sx : 0)) & board[x2 + i]) return true;
+      }
+      x2 += sw;
+    }
+    return false;
+  }
+  function cloudBounds(bounds, d) {
+    var b0 = bounds[0], b1 = bounds[1];
+    if (d.x + d.x0 < b0.x) b0.x = d.x + d.x0;
+    if (d.y + d.y0 < b0.y) b0.y = d.y + d.y0;
+    if (d.x + d.x1 > b1.x) b1.x = d.x + d.x1;
+    if (d.y + d.y1 > b1.y) b1.y = d.y + d.y1;
+  }
+  function collideRects(a2, b) {
+    return a2.x + a2.x1 > b[0].x && a2.x + a2.x0 < b[1].x && a2.y + a2.y1 > b[0].y && a2.y + a2.y0 < b[1].y;
+  }
+  function archimedeanSpiral(size) {
+    var e = size[0] / size[1];
+    return function(t) {
+      return [e * (t *= 0.1) * Math.cos(t), t * Math.sin(t)];
+    };
+  }
+  function rectangularSpiral(size) {
+    var dy = 4, dx = dy * size[0] / size[1], x2 = 0, y2 = 0;
+    return function(t) {
+      var sign = t < 0 ? -1 : 1;
+      switch (Math.sqrt(1 + 4 * sign * t) - sign & 3) {
+        case 0:
+          x2 += dx;
+          break;
+        case 1:
+          y2 += dy;
+          break;
+        case 2:
+          x2 -= dx;
+          break;
+        default:
+          y2 -= dy;
+          break;
+      }
+      return [x2, y2];
+    };
+  }
+  function zeroArray(n) {
+    var a2 = [], i = -1;
+    while (++i < n) a2[i] = 0;
+    return a2;
+  }
+  function cloudCanvas() {
+    return document.createElement("canvas");
+  }
+  function functor(d) {
+    return typeof d === "function" ? d : function() {
+      return d;
+    };
+  }
+  return d3Cloud;
+}
+var d3CloudExports = requireD3Cloud();
+const cloud = /* @__PURE__ */ getDefaultExportFromCjs(d3CloudExports);
+function renderWordCloud(container, words, options = {}) {
+  container.innerHTML = "";
+  const width = options.width ?? Math.max(container.clientWidth || 0, 800);
+  const height = options.height ?? Math.max(container.clientHeight || 0, 600);
+  if (words.length === 0) {
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:12px;color:#475569;height:${height}px;">
+        <div style="font-size:40px;">☁️</div>
+        <div style="font-size:18px;font-weight:600;">No skills to visualize</div>
+        <p style="font-size:14px;line-height:1.6;color:#64748b;max-width:360px;text-align:center;">
+          Feed your pet more job descriptions to see a word cloud of your skills.
+        </p>
+      </div>
+    `;
+    return;
+  }
+  const svg = select(container).append("svg").attr("width", width).attr("height", height).style("font-family", "'Inter', 'SF Pro Display', 'Segoe UI', sans-serif");
+  const g = svg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
+  const colors2 = ordinal(category10);
+  const layout = cloud().size([width, height]).words(words.map((d) => ({ text: d.text, size: d.size }))).padding(5).rotate(() => (~~(Math.random() * 6) - 3) * 30).font("Impact").fontSize((d) => d.size).on("end", draw);
+  layout.start();
+  function draw(words2) {
+    g.selectAll("text").data(words2).enter().append("text").style("font-size", (d) => `${d.size}px`).style("font-family", "Impact").style("fill", (_d, i) => colors2(i.toString())).attr("text-anchor", "middle").attr("transform", (d) => `translate(${d.x},${d.y})rotate(${d.rotate})`).text((d) => d.text);
+  }
+}
 let currentView = "constellation";
 let skillData = { hard: /* @__PURE__ */ new Map(), soft: /* @__PURE__ */ new Map() };
 let skillGalaxy = { nodes: [], links: [] };
@@ -3784,12 +4291,14 @@ function setupViewSwitcher() {
   const constellationBtn = document.getElementById("constellation-view-btn");
   const prismBtn = document.getElementById("prism-view-btn");
   const galaxyBtn = document.getElementById("galaxy-view-btn");
-  if (!constellationBtn || !prismBtn || !galaxyBtn) return;
+  const wordcloudBtn = document.getElementById("wordcloud-view-btn");
+  if (!constellationBtn || !prismBtn || !galaxyBtn || !wordcloudBtn) return;
   constellationBtn.classList.add("active");
   const updateActiveClasses = (view) => {
     constellationBtn.classList.toggle("active", view === "constellation");
     prismBtn.classList.toggle("active", view === "prism");
     galaxyBtn.classList.toggle("active", view === "galaxy");
+    wordcloudBtn.classList.toggle("active", view === "wordcloud");
     {
       galaxyBtn.classList.remove("disabled");
       galaxyBtn.setAttribute("title", "View skills as a dynamic network");
@@ -3804,6 +4313,7 @@ function setupViewSwitcher() {
   constellationBtn.addEventListener("click", () => handleSwitch("constellation"));
   prismBtn.addEventListener("click", () => handleSwitch("prism"));
   galaxyBtn.addEventListener("click", () => handleSwitch("galaxy"));
+  wordcloudBtn.addEventListener("click", () => handleSwitch("wordcloud"));
   updateActiveClasses(currentView);
 }
 function loadAndDisplayGems() {
@@ -3994,6 +4504,8 @@ function renderCurrentView() {
     renderConstellationView();
   } else if (currentView === "prism") {
     renderPrismView();
+  } else if (currentView === "wordcloud") {
+    renderWordCloudView();
   } else {
     {
       renderGalaxyView();
@@ -4445,6 +4957,20 @@ function renderGalaxyView() {
   const container = document.getElementById("skill-crystal");
   if (!container) return;
   renderSkillGalaxy(container, skillGalaxy, {
+    height: 520
+  });
+}
+function renderWordCloudView() {
+  const container = document.getElementById("skill-crystal");
+  if (!container) return;
+  const wordData = [];
+  skillData.hard.forEach((count, skill) => {
+    wordData.push({ text: skill, size: 10 + count * 10 });
+  });
+  skillData.soft.forEach((count, skill) => {
+    wordData.push({ text: skill, size: 10 + count * 10 });
+  });
+  renderWordCloud(container, wordData, {
     height: 520
   });
 }
