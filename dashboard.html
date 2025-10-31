@@ -250,18 +250,18 @@
     .skill-pill::after {
       content: '';
       position: absolute;
-      top: -140%;
-      left: -40%;
-      width: 60%;
-      height: 280%;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
-      transform: rotate(28deg) translateX(-120%);
-      animation: pill-sheen 5.2s ease-in-out infinite;
+      top: -50%;
+      left: 0;
+      width: 120px;
+      height: 200%;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
+      transform: translateX(-150px) skewX(-20deg);
+      animation: pill-sheen 5.5s ease-in-out infinite;
       animation-delay: var(--pill-shine-delay, 0s);
       opacity: 0;
       pointer-events: none;
-      mix-blend-mode: screen;
-      z-index: -1;
+      mix-blend-mode: overlay;
+      z-index: 1;
     }
 
     .skill-pill-hovered {
@@ -275,18 +275,18 @@
 
     @keyframes pill-sheen {
       0% {
-        transform: rotate(28deg) translateX(-130%);
+        transform: translateX(-150px) skewX(-20deg);
         opacity: 0;
       }
       30% {
-        opacity: 0.9;
+        opacity: 0.85;
       }
-      55% {
-        transform: rotate(28deg) translateX(140%);
+      60% {
+        transform: translateX(calc(100% + 150px)) skewX(-20deg);
         opacity: 0;
       }
       100% {
-        transform: rotate(28deg) translateX(140%);
+        transform: translateX(calc(100% + 150px)) skewX(-20deg);
         opacity: 0;
       }
     }
@@ -308,8 +308,8 @@
     @media (prefers-reduced-motion: reduce) {
       .skill-pill::after {
         animation: none;
-        opacity: 0.45;
-        transform: rotate(28deg) translateX(-20%);
+        opacity: 0.35;
+        transform: translateX(25%) skewX(-20deg);
       }
     }
 
