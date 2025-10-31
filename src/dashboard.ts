@@ -387,27 +387,21 @@ function renderConstellationView(): void {
 
   topSkills.forEach(([skill, count, type]) => {
     const skillElement = document.createElement('span');
-    
-    // Size based on frequency (min: 14px, max: 32px)
+
     const fontSize = Math.min(14 + count * 3, 32);
-    
-    // Color based on type
-    const baseColor = type === 'hard' ? '#667eea' : '#ffa500';
-    const bgColor = type === 'hard' ? 'rgba(102, 126, 234, 0.1)' : 'rgba(255, 165, 0, 0.1)';
+    const typeClass = type === 'hard' ? 'skill-pill-hard' : 'skill-pill-soft';
 
     skillElement.textContent = skill;
+    skillElement.classList.add('skill-pill', typeClass);
     skillElement.style.cssText = `
       font-size: ${fontSize}px;
       font-weight: 600;
-      color: ${baseColor};
       padding: 8px 16px;
-      background: ${bgColor};
-      border-radius: 20px;
-      transition: all 0.2s ease;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
       cursor: default;
       user-select: none;
-      position: relative;
     `;
+    skillElement.style.setProperty('--pill-shine-delay', `${(Math.random() * 4).toFixed(2)}s`);
 
     const updateTooltipContent = () => {
       const iconCount = Math.min(count, MAX_TOOLTIP_ICONS);
@@ -436,21 +430,19 @@ function renderConstellationView(): void {
     };
 
     // Hover effect with immediate tooltip (Galaxy style)
-    skillElement.addEventListener('mouseenter', (event: MouseEvent) => {
-      skillElement.style.transform = 'scale(1.1)';
-      skillElement.style.boxShadow = `0 4px 12px ${type === 'hard' ? 'rgba(102, 126, 234, 0.3)' : 'rgba(255, 165, 0, 0.3)'}`;
+    skillElement.addEventListener('mouseenter', () => {
+      skillElement.classList.add('skill-pill-hovered');
       updateTooltipContent();
       tooltip.style.opacity = '1';
       positionTooltip();
     });
     
-    skillElement.addEventListener('mousemove', (event: MouseEvent) => {
+    skillElement.addEventListener('mousemove', () => {
       positionTooltip();
     });
 
     skillElement.addEventListener('mouseleave', () => {
-      skillElement.style.transform = 'scale(1)';
-      skillElement.style.boxShadow = 'none';
+      skillElement.classList.remove('skill-pill-hovered');
       tooltip.style.opacity = '0';
     });
     
