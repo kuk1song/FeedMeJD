@@ -1,43 +1,15 @@
 // Dashboard logic - Upgraded with interactive views and delete functionality
 
-interface Gem {
-  summary: string;
-  skills: {
-    hard: string[];
-    soft: string[];
-  };
-  meta?: {
-    jobId?: string | null;
-    title?: string;
-    company?: string;
-    url?: string;
-    timestamp?: number;
-  };
-}
+import { renderSkillGalaxy } from './views/skillGalaxyView';
+import {
+  Gem,
+  SkillData,
+  SkillGalaxyData,
+  SkillLink,
+  SkillNode,
+} from './types/dashboard';
 
-interface SkillData {
-  hard: Map<string, number>;
-  soft: Map<string, number>;
-}
-
-interface SkillNode {
-  id: string;
-  type: 'hard' | 'soft';
-  count: number;
-}
-
-interface SkillLink {
-  source: string;
-  target: string;
-  strength: number;
-}
-
-interface SkillGalaxyData {
-  nodes: SkillNode[];
-  links: SkillLink[];
-}
-
-const GALAXY_VIEW_ENABLED = false;
+const GALAXY_VIEW_ENABLED = true;
 
 type SkillView = 'constellation' | 'prism' | 'galaxy';
 
@@ -900,5 +872,10 @@ function renderGalaxyPlaceholder(): void {
  * Renders the Galaxy view (will be replaced with the actual implementation).
  */
 function renderGalaxyView(): void {
-  renderGalaxyPlaceholder();
+  const container = document.getElementById('skill-crystal');
+  if (!container) return;
+
+  renderSkillGalaxy(container, skillGalaxy, {
+    height: 520,
+  });
 }
