@@ -4140,31 +4140,16 @@ function createPrismSection(title, skills, color2) {
     gap: 8px;
   `;
   const maxCount = skills.length > 0 ? skills[0][1] : 1;
-  skills.forEach(([skill, count], index2) => {
+  skills.forEach(([skill, count]) => {
     const skillItem = document.createElement("div");
     const percentage = count / maxCount * 100;
     skillItem.style.cssText = `
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 0;
       padding: 8px;
       border-radius: 8px;
       transition: all 0.2s ease;
-    `;
-    const rank = document.createElement("span");
-    rank.textContent = `${index2 + 1}`;
-    rank.style.cssText = `
-      width: 24px;
-      height: 24px;
-      background: ${color2};
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      flex-shrink: 0;
     `;
     const barContainer = document.createElement("div");
     barContainer.style.cssText = `
@@ -4218,7 +4203,6 @@ function createPrismSection(title, skills, color2) {
     bar.appendChild(skillName);
     barContainer.appendChild(bar);
     barContainer.appendChild(countBadge);
-    skillItem.appendChild(rank);
     skillItem.appendChild(barContainer);
     skillItem.addEventListener("mouseenter", () => {
       skillItem.style.background = "rgba(0,0,0,0.02)";

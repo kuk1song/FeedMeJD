@@ -512,34 +512,17 @@ function createPrismSection(title: string, skills: [string, number][], color: st
   // Find max count for scaling
   const maxCount = skills.length > 0 ? skills[0][1] : 1;
   
-  skills.forEach(([skill, count], index) => {
+  skills.forEach(([skill, count]) => {
     const skillItem = document.createElement('div');
     const percentage = (count / maxCount) * 100;
     
     skillItem.style.cssText = `
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 0;
       padding: 8px;
       border-radius: 8px;
       transition: all 0.2s ease;
-    `;
-    
-    // Rank badge
-    const rank = document.createElement('span');
-    rank.textContent = `${index + 1}`;
-    rank.style.cssText = `
-      width: 24px;
-      height: 24px;
-      background: ${color};
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      flex-shrink: 0;
     `;
     
     // Skill bar container
@@ -603,7 +586,6 @@ function createPrismSection(title: string, skills: [string, number][], color: st
     barContainer.appendChild(bar);
     barContainer.appendChild(countBadge);
     
-    skillItem.appendChild(rank);
     skillItem.appendChild(barContainer);
     
     // Hover effect
