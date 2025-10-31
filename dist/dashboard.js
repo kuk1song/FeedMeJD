@@ -2415,6 +2415,9 @@ Transition.prototype = {
   end: transition_end,
   [Symbol.iterator]: selection_prototype[Symbol.iterator]
 };
+function quadOut(t) {
+  return t * (2 - t);
+}
 function cubicInOut(t) {
   return ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;
 }
@@ -4263,10 +4266,14 @@ function renderWordCloud(container, words, options = {}) {
   const svg = select(container).append("svg").attr("width", width).attr("height", height).style("font-family", "'Inter', 'SF Pro Display', 'Segoe UI', sans-serif");
   const g = svg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
   const colors2 = ordinal(category10);
-  const layout = cloud().size([width, height]).words(words.map((d) => ({ text: d.text, size: d.size }))).padding(5).rotate(() => (~~(Math.random() * 6) - 3) * 30).font("Impact").fontSize((d) => d.size).on("end", draw);
+  const layout = cloud().size([width, height]).words(words.map((d) => ({ text: d.text, size: d.size }))).padding(2).rotate(() => {
+    const angles = [-45, -30, -15, 0, 0, 0, 15, 30, 45];
+    return angles[~~(Math.random() * angles.length)];
+  }).font("Impact").fontSize((d) => d.size).spiral("archimedean").on("end", draw);
   layout.start();
   function draw(words2) {
-    g.selectAll("text").data(words2).enter().append("text").style("font-size", (d) => `${d.size}px`).style("font-family", "Impact").style("fill", (_d, i) => colors2(i.toString())).attr("text-anchor", "middle").attr("transform", (d) => `translate(${d.x},${d.y})rotate(${d.rotate})`).text((d) => d.text);
+    const texts = g.selectAll("text").data(words2).enter().append("text").style("font-size", (d) => `${d.size}px`).style("font-family", "Impact").style("fill", (_d, i) => colors2(i.toString())).attr("text-anchor", "middle").attr("transform", (d) => `translate(${d.x},${d.y})rotate(${d.rotate})`).style("opacity", 0).text((d) => d.text);
+    texts.transition().duration(600).delay((_d, i) => i * 30).style("opacity", 1).ease(quadOut);
   }
 }
 let currentView = "constellation";

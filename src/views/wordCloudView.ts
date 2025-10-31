@@ -55,16 +55,22 @@ export function renderWordCloud(
   const layout = cloud()
     .size([width, height])
     .words(words.map((d) => ({ text: d.text, size: d.size })))
-    .padding(5)
-    .rotate(() => (~~(Math.random() * 6) - 3) * 30) // Random rotation: -90, -60, -30, 0, 30, 60, 90
+    .padding(2) // Tighter padding for more compact layout
+    .rotate(() => {
+      // More horizontal bias: 0°, ±15°, ±30°, ±45° (avoid 90°)
+      const angles = [-45, -30, -15, 0, 0, 0, 15, 30, 45];
+      return angles[~~(Math.random() * angles.length)];
+    })
     .font('Impact')
     .fontSize((d: any) => d.size)
+    .spiral('archimedean') // Explicitly use archimedean spiral for tighter packing
     .on('end', draw);
 
   layout.start();
 
   function draw(words: any[]) {
-    g.selectAll('text')
+    const texts = g
+      .selectAll('text')
       .data(words)
       .enter()
       .append('text')
@@ -73,7 +79,16 @@ export function renderWordCloud(
       .style('fill', (_d: any, i: number) => colors(i.toString()))
       .attr('text-anchor', 'middle')
       .attr('transform', (d: any) => `translate(${d.x},${d.y})rotate(${d.rotate})`)
+      .style('opacity', 0) // Start invisible for animation
       .text((d: any) => d.text);
+
+    // Animate words appearing one by one
+    texts
+      .transition()
+      .duration(600)
+      .delay((_d: any, i: number) => i * 30) // Stagger animation
+      .style('opacity', 1)
+      .ease(d3.easeQuadOut);
   }
 }
 
