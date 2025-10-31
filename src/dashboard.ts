@@ -334,27 +334,33 @@ function renderCurrentView(): void {
 function renderConstellationView(): void {
   const container = document.getElementById('skill-crystal')!;
   container.innerHTML = '';
-  
-  // Create tooltip element (similar to Galaxy's inline tooltip but as HTML)
+
   const tooltip = document.createElement('div');
   tooltip.style.cssText = `
     position: absolute;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 4px;
+    border-radius: 999px;
+    font-size: 13px;
     font-weight: 600;
-    color: #f8fafc;
-    background: rgba(15, 23, 42, 0.92);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.4);
+    letter-spacing: 0.01em;
+    color: rgba(15, 23, 42, 0.9);
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.12s ease;
     white-space: nowrap;
     z-index: 100;
-    transform: translate(-50%, -100%);
-    margin-top: -12px;
+    transform: translate(-50%, calc(-100% - 12px));
   `;
   container.appendChild(tooltip);
+
+  const iconSpan = document.createElement('span');
+  iconSpan.style.cssText = 'font-size: 16px; letter-spacing: 2px; filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.25));';
+  const countSpan = document.createElement('span');
+  countSpan.style.cssText = 'font-size: 12px; opacity: 0.75; display: none; color: rgba(15, 23, 42, 0.7);';
+  tooltip.append(iconSpan, countSpan);
   
   const cloudContainer = document.createElement('div');
   cloudContainer.style.cssText = `
@@ -377,6 +383,8 @@ function renderConstellationView(): void {
   // Take top 30 for a clean visual
   const topSkills = allSkills.slice(0, 30);
   
+  const MAX_TOOLTIP_ICONS = 6;
+
   topSkills.forEach(([skill, count, type]) => {
     const skillElement = document.createElement('span');
     
@@ -400,31 +408,44 @@ function renderConstellationView(): void {
       user-select: none;
       position: relative;
     `;
-    
-    const tooltipLabel = `${skill} · ${count} mention${count > 1 ? 's' : ''}`;
-    
+
+    const updateTooltipContent = () => {
+      const iconCount = Math.min(count, MAX_TOOLTIP_ICONS);
+      iconSpan.textContent = '💎'.repeat(iconCount);
+      if (count > MAX_TOOLTIP_ICONS) {
+        countSpan.textContent = `×${count}`;
+        countSpan.style.display = 'inline';
+      } else {
+        countSpan.style.display = 'none';
+      }
+    };
+
+    const positionTooltip = () => {
+      const containerRect = container.getBoundingClientRect();
+      const rect = skillElement.getBoundingClientRect();
+      const { offsetWidth, offsetHeight } = tooltip;
+
+      let centerX = rect.left + rect.width / 2 - containerRect.left;
+      centerX = Math.max(offsetWidth / 2 + 8, Math.min(centerX, container.offsetWidth - offsetWidth / 2 - 8));
+
+      let anchorY = rect.top - containerRect.top;
+      anchorY = Math.max(offsetHeight + 12, Math.min(anchorY, container.offsetHeight - 8));
+
+      tooltip.style.left = `${centerX}px`;
+      tooltip.style.top = `${anchorY}px`;
+    };
+
     // Hover effect with immediate tooltip (Galaxy style)
-    skillElement.addEventListener('mouseenter', (e: MouseEvent) => {
+    skillElement.addEventListener('mouseenter', (event: MouseEvent) => {
       skillElement.style.transform = 'scale(1.1)';
       skillElement.style.boxShadow = `0 4px 12px ${type === 'hard' ? 'rgba(102, 126, 234, 0.3)' : 'rgba(255, 165, 0, 0.3)'}`;
-      
-      // Show tooltip immediately
-      tooltip.textContent = tooltipLabel;
+      updateTooltipContent();
       tooltip.style.opacity = '1';
-      
-      // Position tooltip above the skill element
-      const rect = skillElement.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      tooltip.style.left = `${rect.left + rect.width / 2 - containerRect.left}px`;
-      tooltip.style.top = `${rect.top - containerRect.top}px`;
+      positionTooltip();
     });
     
-    skillElement.addEventListener('mousemove', (e: MouseEvent) => {
-      // Update tooltip position on mouse move
-      const rect = skillElement.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      tooltip.style.left = `${rect.left + rect.width / 2 - containerRect.left}px`;
-      tooltip.style.top = `${rect.top - containerRect.top}px`;
+    skillElement.addEventListener('mousemove', (event: MouseEvent) => {
+      positionTooltip();
     });
 
     skillElement.addEventListener('mouseleave', () => {

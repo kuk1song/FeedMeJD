@@ -4006,22 +4006,28 @@ function renderConstellationView() {
   const tooltip = document.createElement("div");
   tooltip.style.cssText = `
     position: absolute;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 4px;
+    border-radius: 999px;
+    font-size: 13px;
     font-weight: 600;
-    color: #f8fafc;
-    background: rgba(15, 23, 42, 0.92);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.4);
+    letter-spacing: 0.01em;
+    color: rgba(15, 23, 42, 0.9);
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.12s ease;
     white-space: nowrap;
     z-index: 100;
-    transform: translate(-50%, -100%);
-    margin-top: -12px;
+    transform: translate(-50%, calc(-100% - 12px));
   `;
   container.appendChild(tooltip);
+  const iconSpan = document.createElement("span");
+  iconSpan.style.cssText = "font-size: 16px; letter-spacing: 2px; filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.25));";
+  const countSpan = document.createElement("span");
+  countSpan.style.cssText = "font-size: 12px; opacity: 0.75; display: none; color: rgba(15, 23, 42, 0.7);";
+  tooltip.append(iconSpan, countSpan);
   const cloudContainer = document.createElement("div");
   cloudContainer.style.cssText = `
     display: flex;
@@ -4038,6 +4044,7 @@ function renderConstellationView() {
   skillData.soft.forEach((count, skill) => allSkills.push([skill, count, "soft"]));
   allSkills.sort((a2, b) => b[1] - a2[1]);
   const topSkills = allSkills.slice(0, 30);
+  const MAX_TOOLTIP_ICONS = 6;
   topSkills.forEach(([skill, count, type]) => {
     const skillElement = document.createElement("span");
     const fontSize = Math.min(14 + count * 3, 32);
@@ -4056,22 +4063,36 @@ function renderConstellationView() {
       user-select: none;
       position: relative;
     `;
-    const tooltipLabel = `${skill} · ${count} mention${count > 1 ? "s" : ""}`;
-    skillElement.addEventListener("mouseenter", (e) => {
+    const updateTooltipContent = () => {
+      const iconCount = Math.min(count, MAX_TOOLTIP_ICONS);
+      iconSpan.textContent = "💎".repeat(iconCount);
+      if (count > MAX_TOOLTIP_ICONS) {
+        countSpan.textContent = `×${count}`;
+        countSpan.style.display = "inline";
+      } else {
+        countSpan.style.display = "none";
+      }
+    };
+    const positionTooltip = () => {
+      const containerRect = container.getBoundingClientRect();
+      const rect = skillElement.getBoundingClientRect();
+      const { offsetWidth, offsetHeight } = tooltip;
+      let centerX = rect.left + rect.width / 2 - containerRect.left;
+      centerX = Math.max(offsetWidth / 2 + 8, Math.min(centerX, container.offsetWidth - offsetWidth / 2 - 8));
+      let anchorY = rect.top - containerRect.top;
+      anchorY = Math.max(offsetHeight + 12, Math.min(anchorY, container.offsetHeight - 8));
+      tooltip.style.left = `${centerX}px`;
+      tooltip.style.top = `${anchorY}px`;
+    };
+    skillElement.addEventListener("mouseenter", (event) => {
       skillElement.style.transform = "scale(1.1)";
       skillElement.style.boxShadow = `0 4px 12px ${type === "hard" ? "rgba(102, 126, 234, 0.3)" : "rgba(255, 165, 0, 0.3)"}`;
-      tooltip.textContent = tooltipLabel;
+      updateTooltipContent();
       tooltip.style.opacity = "1";
-      const rect = skillElement.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      tooltip.style.left = `${rect.left + rect.width / 2 - containerRect.left}px`;
-      tooltip.style.top = `${rect.top - containerRect.top}px`;
+      positionTooltip();
     });
-    skillElement.addEventListener("mousemove", (e) => {
-      const rect = skillElement.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      tooltip.style.left = `${rect.left + rect.width / 2 - containerRect.left}px`;
-      tooltip.style.top = `${rect.top - containerRect.top}px`;
+    skillElement.addEventListener("mousemove", (event) => {
+      positionTooltip();
     });
     skillElement.addEventListener("mouseleave", () => {
       skillElement.style.transform = "scale(1)";
