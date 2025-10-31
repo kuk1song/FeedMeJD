@@ -11,6 +11,8 @@ type PositionedNode = SkillNode &
 
 type PositionedLink = d3.SimulationLinkDatum<PositionedNode> & {
   strength: number;
+  sourceId: string;
+  targetId: string;
 };
 
 export interface SkillGalaxyRenderOptions {
@@ -38,7 +40,21 @@ export function renderSkillGalaxy(
   container.innerHTML = '';
 
   const nodes: PositionedNode[] = data.nodes.map((node: SkillNode) => ({ ...node }));
-  const links: PositionedLink[] = data.links.map((link: SkillLink) => ({ ...link }));
+  const links: PositionedLink[] = data.links.map((link: SkillLink) => ({
+    ...link,
+    sourceId: link.source,
+    targetId: link.target,
+  }));
+
+  const neighborMap = new Map<string, Set<string>>();
+  links.forEach((link) => {
+    const sourceId = link.sourceId;
+    const targetId = link.targetId;
+    if (!neighborMap.has(sourceId)) neighborMap.set(sourceId, new Set());
+    if (!neighborMap.has(targetId)) neighborMap.set(targetId, new Set());
+    neighborMap.get(sourceId)!.add(targetId);
+    neighborMap.get(targetId)!.add(sourceId);
+  });
 
   if (nodes.length === 0) {
     container.innerHTML = `
@@ -205,7 +221,12 @@ export function renderSkillGalaxy(
       if (!source || !target || source.x == null || target.x == null || source.y == null || target.y == null) {
         return;
       }
-      ctx.lineWidth = 1 + Math.min(link.strength, 6) * 0.1;
+      const connectsHovered = hovered
+        ? source === hovered || target === hovered || link.sourceId === hovered.id || link.targetId === hovered.id
+        : false;
+      ctx.globalAlpha = hovered ? (connectsHovered ? 0.85 : 0.12) : 0.45;
+      ctx.strokeStyle = connectsHovered ? withAlpha(HOVER_RING, 0.9) : LINK_COLOR;
+      ctx.lineWidth = connectsHovered ? 1.8 : 1 + Math.min(link.strength, 6) * 0.1;
       ctx.beginPath();
       ctx.moveTo(source.x, source.y);
       ctx.lineTo(target.x, target.y);
@@ -217,9 +238,10 @@ export function renderSkillGalaxy(
       if (node.x == null || node.y == null) return;
       const radius = node.radius ?? 18;
       const isActive = hovered === node;
+      const isNeighbor = hovered ? neighborMap.get(hovered.id)?.has(node.id) ?? false : false;
 
       const baseColor = node.type === 'hard' ? HARD_COLOR : SOFT_COLOR;
-      const fillAlpha = isActive ? 0.28 : 0.18;
+      const fillAlpha = hovered ? (isActive ? 0.35 : isNeighbor ? 0.22 : 0.08) : 0.18;
       ctx.beginPath();
       ctx.fillStyle = withAlpha(baseColor, fillAlpha);
       ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
@@ -229,9 +251,14 @@ export function renderSkillGalaxy(
         ctx.strokeStyle = HOVER_RING;
         ctx.lineWidth = 1.6;
         ctx.stroke();
+      } else if (isNeighbor) {
+        ctx.strokeStyle = withAlpha(baseColor, 0.45);
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
       }
 
-      ctx.fillStyle = TEXT_COLOR;
+      const dimText = hovered && !isActive && !isNeighbor;
+      ctx.fillStyle = dimText ? withAlpha(TEXT_COLOR, 0.55) : TEXT_COLOR;
       ctx.font = `600 ${node.fontSize ?? 16}px 'Inter', 'SF Pro Display', 'Segoe UI', sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
