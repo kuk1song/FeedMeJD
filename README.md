@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💎 FeedMeJD
+# FeedMeJD
 
 ### *Discover Your Hidden Blueprint*
 
@@ -87,10 +87,10 @@ No spreadsheets. Just click, collect, and discover.
 | Technology | Purpose |
 |------------|---------|
 | **🤖 Gemini Nano** | On-device AI for skill extraction |
-| **⚡ `chrome.ai` API** | Built-in AI session management |
-| **📊 D3.js** | Interactive visualizations |
+| **📊 D3.js** | Rich, interactive data visualizations |
+| **🔷 TypeScript** | For a robust and maintainable codebase |
+| **⚡ Vite** | Lightning-fast build and development tooling |
 
-*Built for the **Google Chrome AI Hackathon 2025***
 
 ---
 
