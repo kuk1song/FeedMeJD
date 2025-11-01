@@ -4,8 +4,6 @@
 
 ### *Discover Your Hidden Blueprint*
 
-**Feed your pet job descriptions. Uncover the skills that matter most.**
-
 </div>
 
 <p align="center">
