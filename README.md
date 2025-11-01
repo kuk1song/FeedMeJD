@@ -154,6 +154,6 @@ This project is licensed under the **MIT License**. See the `LICENSE` file for d
 
 **Made with 💎 for the Google Chrome AI Hackathon 2025**
 
-<sub>If FeedMeJD helped you discover your hidden blueprint, we'd love to hear your story! 🌟</sub>
+*If FeedMeJD helps you discover your hidden blueprint, we'd love to hear your story!* 🌟
 
 </div>
