@@ -133,8 +133,6 @@ This will create a `dist` folder, which contains the ready-to-install extension.
 5.  Click the pet again (or the extension icon) to open your **Skill Gallery**
 6.  Explore your hidden blueprint across all 4 visualization styles 🎨
 
-> Need a refresher? The [video walkthrough](https://www.youtube.com/watch?v=3SPL8l4uTYs) shows each step in action.
-
 > **💡 Pro tip**: Analyze jobs from the same industry or role type to get the clearest skill patterns!
 
 ---
@@ -147,8 +145,6 @@ This is just the beginning of your skill discovery journey. On the horizon:
 - 🎯 **Smart Job Recommendations** — Get suggestions based on your revealed skill profile
 - 📊 **Skill Gap Analysis** — Know exactly what to learn next to land your dream role
 - 🌐 **Cross-Platform Support** — Analyze jobs from Indeed, Glassdoor, and more
-
-Excited about these features? Star the repo ⭐ and let us know what you'd like to see!
 
 ---
 
