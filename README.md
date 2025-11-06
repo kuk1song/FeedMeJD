@@ -31,6 +31,10 @@
 
 ---
 
+👉 Want the quick tour? Watch the [FeedMeJD walkthrough](https://www.youtube.com/watch?v=3SPL8l4uTYs).
+
+[![Watch FeedMeJD walkthrough](https://img.youtube.com/vi/3SPL8l4uTYs/hqdefault.jpg)](https://www.youtube.com/watch?v=3SPL8l4uTYs)
+
 ## 🔍 The Insight
 
 You're applying to dozens of jobs. Each JD feels unique, but **what if you could see the pattern?**
@@ -94,6 +98,8 @@ No spreadsheets. Just click, collect, and discover.
 
 ## 🧑‍⚖️ For Judges: How to Test
 
+🎥 Prefer video first? Check out the [setup and demo](https://www.youtube.com/watch?v=3SPL8l4uTYs) for an end-to-end walkthrough.
+
 ### Prerequisites
 -   **Google Chrome** (Version 127 or newer)
 -   **Gemini Nano** will download automatically on first use if needed (~1-2 minutes)
@@ -126,6 +132,8 @@ This will create a `dist` folder, which contains the ready-to-install extension.
 4.  **Repeat for 3-5 more jobs** you're interested in (the more, the better!)
 5.  Click the pet again (or the extension icon) to open your **Skill Gallery**
 6.  Explore your hidden blueprint across all 4 visualization styles 🎨
+
+> Need a refresher? The [video walkthrough](https://www.youtube.com/watch?v=3SPL8l4uTYs) shows each step in action.
 
 > **💡 Pro tip**: Analyze jobs from the same industry or role type to get the clearest skill patterns!
 
